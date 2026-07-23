@@ -50,7 +50,7 @@ The TBT numbers alone — 6 to 9 seconds of main-thread blocking on every page l
 | 07-search         | 26   | 33.5 s | 0.001 | 5,960 ms | TBD | TBD | TBD         |
 | 08-newsletters    | 25   | 31.3 s | 0.001 | 6,060 ms | TBD | TBD | TBD         |
 
-_Speed Index, FCP, and full audit details are in `lighthouse/<name>.report.html` and the raw JSON for each page._
+_Speed Index, FCP, and full audit details are in the raw `lighthouse/*.json` for each page._
 
 ---
 

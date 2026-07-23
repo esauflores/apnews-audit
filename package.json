@@ -1,5 +1,5 @@
 {
-  "name": "course-project-apnews-audit",
+  "name": "apnews-audit",
   "version": "1.0.0",
   "description": "**Course:** FE413 — Web Performance **Project type:** Course Project (collective audit over ~3 weeks) **Audit target:** [AP News](https://apnews.com/) **Status:** Complete — baseline captured, 15 findings ranked by RICE, 3-phase rollout plan",
   "main": "index.js",
