@@ -103,7 +103,7 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `implementation.md` — Same implementer content in markdown for review and searching.
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
-- `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture` · `just coverage-frames` · `just rendering-strategy`.
+- `justfile` — automation: `just setup` · `just audit URL NAME` · `just audit-all` · `just screenshot URL NAME` · `just screenshots` · `just present` · `just report` · `just build-capture` · `just coverage-frames` · `just rendering-strategy` · `just clean`.
 - `scripts/setup-profile.js` — puppeteer-driven OneTrust consent acceptance.
 - `scripts/build-capture.mjs` — inspect homepage build outputs (JS/CSS bundles, image formats, 3P loading strategy, source-map exposure, unused-JS via coverage API).
 - `scripts/coverage-frame-capture.mjs` — critical-CSS check, unused JS/CSS attribution, frame chart (load/scroll/click), layers & animations introspection.
