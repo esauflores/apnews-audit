@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW5 complete — Mobile measurement profile explicit in baseline; 2 mobile-specific findings added (TBT × 4× CPU throttle; cellular data cost on warm visits)
+**Status:** HW6 complete — ICE prioritization system added alongside RICE, with explicit Impact derivation rule (max of Initial Load / Usability) and WSJF as a third framework. Triangulation narrows the Phase 1 plan to 4 items that are top-tier in all 3 systems.
 
 ---
 
@@ -19,8 +19,8 @@ The cause is structural: **8 third-party scripts consume 12 s of main-thread tim
 - Homepage cold-load: **662 requests, 8.15 MB transfer, 24.94 MB uncompressed, 67.3% compression savings**
 - Homepage soft-refresh: **~0% transfer savings** — cache benefit eaten by third-party re-fetches
 
-Six front-end fixes ranked by RICE. Five of them ship in phase 1 (week 1), no backend rebuild required.
-See `presentation.html` for the 9-slide pitch deck.
+Six front-end fixes ranked by **three independent frameworks** (RICE + ICE + WSJF). Four are top-tier in all 3 systems and ship in phase 1 (week 1) — no backend rebuild required.
+See `prioritization.md` for the triangulation and `presentation.html` for the 9-slide pitch deck.
 
 ## The site
 
@@ -96,7 +96,7 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `README.md` — this file
 - `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity (cold/warm load, compression, caching). Per-page sweep across 8 archetypes.
 - `findings.md` — 10 main findings (Rendering + Networking + Accessibility) + 2 mobile-specific findings + 6 appendix findings. Each independently observable, RICE-scored.
-- `prioritization.md` — RICE table + 3-phase rollout plan + mobile callouts + override notes.
+- `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 12 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
 - `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
