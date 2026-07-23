@@ -221,8 +221,8 @@ Coverage and frame-chart findings, derived from the [Coverage](./baseline.md#cov
       - **Initial Load**: 2 — paint cost is not the bottleneck
       - **Usability**: 2
       - **User Delight**: 1
-  - **Baseline**: CSS rules walk finds **0 `will-change` declarations** and **0 `translate3d(0,0,0)` hacks**. Only **1 forced compositing layer** on first paint — the Riverdrop widget iframe (370 KB preloaded but not user-visible).
-  - **Cause**: first-party CSS is well-behaved — the team has not over-applied Day 8–style "force the GPU" optimizations. The single forced layer is a third-party widget we don't control.
+  - **Baseline**: DOM walk enumerates **3 stacking contexts** on the homepage (2 via `opacity < 1` for pre-paint fade, 1 via `position + z-index` for an ad slot), plus **1 iframe** (Riverdrop widget, 370 KB preloaded) for ~4 paint layers total. **0 `will-change` declarations, 0 `translate3d(0,0,0)` hacks, 0 animations triggered on scroll.**
+  - **Cause**: first-party CSS is well-behaved — the team has not over-applied Day 8–style "force the GPU" optimizations. The only forced layer is a third-party widget we don't control.
   - **Solution**: this is positive news for prioritization — layer-cost optimization will not move the needle for AP News. The frame-chart dropped frames are caused by main-thread JS blocking, not by paint or composite cost. No corrective action on first-party code; consider negotiating with Riverdrop to lazy-load the iframe until user interaction.
 
 ---

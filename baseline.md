@@ -395,21 +395,28 @@ This is **direct user-perceptible evidence** of the audit's headline finding. A 
 
 ## Layers & animations
 
-Captured via CSS rules introspection (`document.styleSheets` walk) and the Chrome DevTools Protocol `LayerTree.enable`.
+Captured via DOM walk (`document.querySelectorAll('*')` + `getComputedStyle` for stacking-context detection), CSS rules introspection (`document.styleSheets` walk), and the Chrome DevTools Protocol `LayerTree.enable`. Captured via `scripts/coverage-frame-capture.mjs` (`just coverage-frames`).
 
 | Metric | Value |
 |---|---|
+| **Stacking contexts on the homepage** | **3** |
+| ↳ by `opacity < 1` (body fade-in pre-paint, decorative circle) | 2 |
+| ↳ by `position + z-index` (header leaderboard ad) | 1 |
 | `will-change` selectors (forced layer creation) | **0** |
 | `translate3d` / `transform3d` selectors (forced compositing) | **0** |
 | `document.getAnimations()` count on first paint | **0** |
+| Animations started on scroll | **0** |
 | `<canvas>` elements | 0 |
 | `<video>` elements on first paint | 0 |
 | `<iframe>` elements | **1** (Riverdrop widget — preloaded but not seen on first paint) |
 
+**Estimated paint-layer count on the homepage**: ~4 (3 stacking contexts above + 1 iframe + 1 root document).
+
 **Observations**:
 - AP News's first-party CSS **does not aggressively create layers** — no `will-change` declarations, no `translate3d(0,0,0)` "useless properties" hack. This is the correct post-Day-8-§-1.3 behavior (don't create layers you don't need).
+- The 3 stacking contexts are all justified: 1 ad slot needs `position + z-index` to stack above other content; 2 use `opacity < 1` for pre-paint hide/show (a fade-in pattern). Neither is "forced" in the wasteful sense.
 - The single iframe (Riverdrop, 370 KB preloaded) is the only forced compositing layer on first paint, and it's not user-visible.
-- No `<canvas>` or `<video>` elements compete for paint on first paint — animation cost is low.
+- No animations start on scroll — the page doesn't attempt scroll-triggered effects (which is correct under TBT — animations would just stutter anyway).
 - Net: **the paint-layer cost is healthy** for AP News's own code. The slowness the user feels is main-thread JS blocking, not compositing cost. (This matters for prioritization: a layer-cost optimization won't help; deferring scripts will.)
 
 This confirms that the frame-chart dropped frames are caused by **JS execution blocking the main thread**, not by paint or composite cost.

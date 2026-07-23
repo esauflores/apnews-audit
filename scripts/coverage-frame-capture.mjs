@@ -45,21 +45,26 @@ await sleep(8000); // let scripts run
 
 // Capture the frame timing from the page (uses requestAnimationFrame delta times)
 async function captureFrames(label, durationMs) {
-  const result = await page.evaluate(async (label, durationMs) => {
-    const frames = [];
-    let last = performance.now();
-    let next = last + durationMs;
-    while (last < next) {
-      await new Promise((r) => requestAnimationFrame((t) => {
-        const dt = t - last;
-        frames.push({ t, dt, dropped: dt > 16.67 * 1.5 }); // >25ms = dropped frame
-        last = t;
-        r();
-      }));
-    }
-    return { label, totalFrames: frames.length, droppedFrames: frames.filter((f) => f.dropped).length, avgDt: frames.reduce((a, f) => a + f.dt, 0) / frames.length, maxDt: Math.max(...frames.map((f) => f.dt)), frames: frames.slice(0, 200) };
-  }, label, durationMs);
-  return result;
+  try {
+    const result = await page.evaluate(async (label, durationMs) => {
+      const frames = [];
+      let last = performance.now();
+      let next = last + durationMs;
+      while (last < next) {
+        await new Promise((r) => requestAnimationFrame((t) => {
+          const dt = t - last;
+          frames.push({ t, dt, dropped: dt > 16.67 * 1.5 }); // >25ms = dropped frame
+          last = t;
+          r();
+        }));
+      }
+      return { label, totalFrames: frames.length, droppedFrames: frames.filter((f) => f.dropped).length, avgDt: frames.reduce((a, f) => a + f.dt, 0) / frames.length, maxDt: Math.max(...frames.map((f) => f.dt)), frames: frames.slice(0, 200) };
+    }, label, durationMs);
+    return result;
+  } catch (e) {
+    console.error(`captureFrames(${label}) failed:`, e.message);
+    return null;
+  }
 }
 
 const loadFrames = await captureFrames('load', 5000);
@@ -123,15 +128,63 @@ const inlineStyles = await page.evaluate(() => {
   }));
 });
 
-// Count composited layers via runtime evaluation
+// Enumerate stacking contexts via DOM walk + CSSStyleDeclaration inspection.
+// A stacking context is created by elements with position+ z-index, fixed/sticky
+// positioning, opacity < 1, transform/filter/perspective != none, will-change
+// creating a stacking context, isolation: isolate, mix-blend-mode != normal, etc.
+const stackingContexts = await page.evaluate(() => {
+  const creates = (el, cs) => {
+    const pos = cs.position;
+    const zi = cs.zIndex;
+    const opacity = parseFloat(cs.opacity || '1');
+    const transform = cs.transform || '';
+    const filter = cs.filter || '';
+    const willChange = cs.willChange || '';
+    const isolation = cs.isolation || '';
+    const mixBlend = cs.mixBlendMode || '';
+    const contain = cs.contain || '';
+    if (pos === 'fixed' || pos === 'sticky') return { reason: `position:${pos}` };
+    if ((pos === 'absolute' || pos === 'relative') && zi && zi !== 'auto') return { reason: `position:${pos} z-index:${zi}` };
+    if (opacity < 1) return { reason: `opacity:${opacity}` };
+    if (transform && transform !== 'none') return { reason: `transform:${transform.slice(0, 40)}` };
+    if (filter && filter !== 'none') return { reason: `filter:${filter.slice(0, 40)}` };
+    if (willChange && /(transform|opacity|filter|will-change)/.test(willChange)) return { reason: `will-change:${willChange}` };
+    if (isolation === 'isolate') return { reason: 'isolation:isolate' };
+    if (mixBlend && mixBlend !== 'normal') return { reason: `mix-blend-mode:${mixBlend}` };
+    if (/paint|strict|content/.test(contain)) return { reason: `contain:${contain}` };
+    return null;
+  };
+  const ctxs = [];
+  document.querySelectorAll('*').forEach((el) => {
+    const cs = window.getComputedStyle(el);
+    const r = creates(el, cs);
+    if (r) ctxs.push({ tag: el.tagName.toLowerCase(), id: el.id || null, classes: el.className?.toString().slice(0, 40) || null, reason: r.reason });
+  });
+  return ctxs;
+});
+
+// Active animations + canvas / video / iframe counts
 const compositedCount = await page.evaluate(() => {
-  // Layer count is opaque from JS; approximate via DOM + animated elements
   const animated = document.getAnimations ? document.getAnimations().length : 0;
   const iframes = document.querySelectorAll('iframe').length;
   const canvas = document.querySelectorAll('canvas').length;
   const videos = document.querySelectorAll('video').length;
   return { animationsActive: animated, iframes, canvas, videos };
 });
+
+// Trigger scroll + hover and count any new animations that start
+let scrollAnimations = { before: 0, after: 0, started: 0 };
+try {
+  scrollAnimations = await page.evaluate(async () => {
+    const before = document.getAnimations ? document.getAnimations().length : 0;
+    window.scrollTo(0, document.body.scrollHeight / 2);
+    await new Promise((r) => setTimeout(r, 200));
+    const after = document.getAnimations ? document.getAnimations().length : 0;
+    return { before, after, started: after - before };
+  });
+} catch (e) {
+  console.error('scrollAnimations failed:', e.message);
+}
 
 // ---------- 6. Coverage stop + collect ----------
 await client.send('Tracing.end');
@@ -208,6 +261,16 @@ const result = {
     willChangeMatches: willChangeInfo.filter((m) => m.type === 'will-change'),
     translate3dMatches: willChangeInfo.filter((m) => m.type === 'translate3d'),
     compositedIndicators: compositedCount,
+    scrollAnimationsStarted: scrollAnimations.started,
+    stackingContexts: {
+      total: stackingContexts.length,
+      byReason: (() => {
+        const m = {};
+        stackingContexts.forEach((c) => { m[c.reason.split(':')[0]] = (m[c.reason.split(':')[0]] || 0) + 1; });
+        return m;
+      })(),
+      sample: stackingContexts.slice(0, 10),
+    },
     rootLayerId: layerInfo.rootLayerId,
     rootLayerTree: layerTree,
   },
@@ -257,14 +320,17 @@ console.log('Click :', JSON.stringify(result.frameChart.click));
 console.log('Click target:', clickResult);
 console.log();
 console.log('=== Layers & animations ===');
+console.log('Stacking contexts (DOM-walk):', result.layersAndAnimations.stackingContexts.total);
+console.log('  by trigger:');
+Object.entries(result.layersAndAnimations.stackingContexts.byReason).forEach(([k, v]) => console.log('    ' + k + ': ' + v));
 console.log('will-change selectors:', result.layersAndAnimations.willChangeMatches.length);
 console.log('translate3d / transform3d selectors:', result.layersAndAnimations.translate3dMatches.length);
 console.log('Composited indicators:', result.layersAndAnimations.compositedIndicators);
+console.log('Animations started on scroll:', result.layersAndAnimations.scrollAnimationsStarted);
 console.log('Root layer id:', result.layersAndAnimations.rootLayerId);
 console.log();
-console.log('Top will-change / translate3d matches:');
-result.layersAndAnimations.willChangeMatches.slice(0, 5).forEach((m) => console.log('  will-change: ' + m.willChange + '  on ' + m.selector));
-result.layersAndAnimations.translate3dMatches.slice(0, 5).forEach((m) => console.log('  ' + m.transform + '  on ' + m.selector));
+console.log('Top stacking-context sources:');
+result.layersAndAnimations.stackingContexts.sample.slice(0, 10).forEach((c) => console.log('  ' + c.tag + (c.id ? '#' + c.id : '') + (c.classes ? '.' + c.classes.split(' ')[0] : '') + '  via ' + c.reason));
 console.log();
 console.log('Full data: ' + OUTPUT);
 
