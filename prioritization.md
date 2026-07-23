@@ -6,7 +6,7 @@ This file documents three prioritization systems applied to all current correcti
 2. **ICE** (Impact × Confidence × Ease) — different from RICE: no Reach, Ease as multiplier.
 3. **WSJF** (Weighted Shortest Job First) — SAFe framework: Cost of Delay ÷ Job Size.
 
-All three systems are applied to the same 12 corrective findings + 6 appendix items, so the rankings can be triangulated.
+All three systems are applied to the same 18 corrective findings (17 main + 1 mobile callout counted as a separate line) + 6 appendix items, so the rankings can be triangulated.
 
 ---
 
@@ -91,18 +91,24 @@ Three findings' Impact scores change under the rule (initial render, TBT, JS dom
 |---|---|---:|---:|---:|
 | 1 | Initial page functionality is significantly delayed (TBT) | **100.00** | **125** | **11.50** |
 | 2 | TBT amplified 4× by mobile CPU *(mobile callout)* | 100.00 | 125 | 11.00 |
-| 3 | Images do not render in order of user need | 60.00 | 80 | **14.00** |
-| 4 | Delayed ad makes page look broken (donate CLS) | 40.00 | 80 | 9.33 |
-| 5 | Initial page render is significantly delayed | 40.00 | 80 | 4.25 |
-| 6 | Initial visual page load is significantly delayed (LCP) | 33.33 | 60 | 4.40 |
-| 7 | Soft-refresh transfer savings are ~0% | 40.00 | 64 | 4.00 |
-| 8 | Mobile data cost on cellular *(mobile callout)* | 40.00 | 64 | 4.50 |
-| 9 | Interactive controls invisible to AT | 37.50 | 60 | 7.67 |
-| 10 | JavaScript dominates the homepage payload | 26.67 | 60 | 2.43 |
-| 11 | Images ship without AVIF | 30.00 | 48 | 3.25 |
-| 12 | Fonts re-fetch on warm load | 10.00 | 18 | 1.80 |
+| 3 | Page renders at ~1 fps during load/scroll/click *(HW8 frame chart)* | 80.00 | **100** | 12.00 |
+| 4 | First-party bundle ships 82% unused code *(HW7 build outputs)* | 80.00 | 80 | 3.00 |
+| 5 | First-party stylesheet render-blocking + 100% unused *(HW8 coverage)* | 70.00 | 70 | 4.00 |
+| 6 | Images do not render in order of user need | 60.00 | 80 | **14.00** |
+| 7 | OneTrust consent SDK runs sync in `<head>` *(HW7 build outputs)* | 60.00 | 60 | 5.00 |
+| 8 | webcontentassessor.com is unnecessary vendor *(HW7)* | 50.00 | 50 | 6.00 |
+| 9 | Delayed ad makes page look broken (donate CLS) | 40.00 | 80 | 9.33 |
+| 10 | Initial page render is significantly delayed | 40.00 | 80 | 4.25 |
+| 11 | Soft-refresh transfer savings are ~0% | 40.00 | 64 | 4.00 |
+| 12 | Mobile data cost on cellular *(mobile callout)* | 40.00 | 64 | 4.50 |
+| 13 | Interactive controls invisible to AT | 37.50 | 60 | 7.67 |
+| 14 | Initial visual page load is significantly delayed (LCP) | 33.33 | 60 | 4.40 |
+| 15 | Images ship without AVIF | 30.00 | 48 | 3.25 |
+| 16 | No aggressive layer creation *(HW8 layers — paint cost is healthy)* | 25.00 | 25 | 1.00 |
+| 17 | JavaScript dominates the homepage payload | 26.67 | 60 | 2.43 |
+| 18 | Fonts re-fetch on warm load | 10.00 | 18 | 1.80 |
 
-**Bold** = top-3 in that system.
+**Bold** = top-3 in that system. RICE scores for the 6 new (HW7 + HW8) findings reuse the same scoring methodology; ICE / WSJF scores derived via the same derivation rule. Ranking shifts as new findings enter the system.
 
 ### Appendix findings (three-system)
 

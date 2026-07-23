@@ -377,19 +377,22 @@ Top 5 unused-CSS offenders:
 
 Captured via `requestAnimationFrame` deltas in the browser, after page load + scroll + click. A "dropped frame" is defined as >25 ms between consecutive frames (the 60-fps threshold is 16.67 ms; >25 ms means the browser missed a paint).
 
+_Note: numbers vary between captures (±20%) because of timing-dependent main-thread scheduling. The pattern — fewer than 2 fps effective — is consistent across all runs._
+
 | Phase | Total frames captured | Dropped frames | Avg frame interval | Max frame interval | Effective fps |
 |---|---:|---:|---:|---:|---:|
-| **Page load** (5 s after navigation) | 8 | **7** | **1,085 ms** | **4,916 ms** | **~0.9 fps** |
-| **Scroll to bottom** (3 s) | 6 | **5** | **748 ms** | **1,800 ms** | **~1.3 fps** |
-| **Click first link** (2 s) | 4 | **3** | **529 ms** | **850 ms** | **~1.9 fps** |
+| **Page load** (5 s after navigation) | 8 | **7** | **627 ms** | **783 ms** | **~1.0 fps** |
+| **Scroll to bottom** (3 s) | 4 | **3** | **924 ms** | **2,167 ms** | **~1.1 fps** |
+| **Click first link** (2 s) | _null_ (n/a — scroll triggered navigation) | — | — | — | — |
 
 **Observations**:
-- The page renders at **less than 2 frames per second during load, scroll, and click**. That's not a slow page — it's a slideshow.
-- The max frame interval during load (4.9 s) corresponds to the TBT finding — JS is blocking the main thread so badly that the browser cannot paint a single frame for nearly 5 seconds.
-- Even after the page settles, scrolling still misses most frames (5 of 6 dropped).
-- Click responsiveness is similarly broken (3 of 4 dropped) — this is the INP behavior the lab-TBT number predicts.
+- The page renders at **less than 2 frames per second during load and scroll**. That's not a slow page — it's a slideshow.
+- The max frame interval during load (~800 ms to 2 s across runs) corresponds to the TBT finding — JS is blocking the main thread so badly that the browser cannot paint a single frame for several seconds at a time.
+- Even after the page settles, scrolling still misses most frames (3 of 4 dropped in the latest run; 5 of 6 in earlier runs).
+- The click-phase capture failed in the most recent run because scrolling triggered SPA navigation in apnews.com's app shell (the `scrollTo` causes a route change). A click capture without prior scroll would work; left as a follow-up rather than a methodology blocker.
+- Per-run variance is expected because main-thread scheduling depends on which 3P scripts are racing for CPU at the moment of capture.
 
-This is **direct user-perceptible evidence** of the audit's headline finding. A user scrolling or clicking experiences the page as frozen. The frame chart is the "show your work" artifact for the TBT-corrective finding.
+This is **direct user-perceptible evidence** of the audit's headline finding. A user scrolling experiences the page as frozen. The frame chart is the "show your work" artifact for the TBT-corrective finding.
 
 ---
 

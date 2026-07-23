@@ -2,7 +2,7 @@
 
 *Findings cleaned per HW4 spec: each is independently observable. Lab evidence only — CrUX / INP / A11y / BP / SEO field-equivalent data not captured (noted in `baseline.md`).*
 
-*Six corrective + two good findings from the example audit structure are reproduced below. Additional corrective findings cover networking-specific issues.*
+*17 corrective + 2 good findings across Rendering (5) / Networking (4 corrective + 2 good) / Accessibility (1) / Build outputs (4) / Coverage & frames (3). Plus 2 mobile-specific callouts and 6 appendix findings. RICE-scored throughout; full triangulation across RICE / ICE / WSJF in `prioritization.md`.*
 
 ---
 
