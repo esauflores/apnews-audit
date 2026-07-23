@@ -138,6 +138,56 @@
 
 ---
 
+## Build outputs
+
+Build-pipeline-level findings, derived from the [Build outputs](./baseline.md#build-outputs-homepage) section in `baseline.md`.
+
+- **First-party bundle ships page-type-specific code on every page (82% unused on the homepage).**
+  - **Prioritization**: 80.00
+    - **Effort**: 4 · **Reach**: 5 · **Confidence**: 5
+    - **Impact**:
+      - **Initial Load**: 5 — 91 KB of JS that doesn't execute on first paint is still parse + eval cost
+      - **Usability**: 4
+      - **User Delight**: 1
+  - **Baseline**: Lighthouse coverage on the homepage shows the content-hashed `All.min.*.gz.js` bundle is **91 KB wasted out of 111 KB total (82% unused)**. Same bundle serves article, photography, donate, search, and newsletters — each page only needs a subset.
+  - **Cause**: no route-based code splitting. The bundler treats every page as needing the full app shell. Article templates, photography modules, quiz embeds, donation flows all ship together.
+  - **Solution**: route-based code splitting — `/newsletters` should ship a sub-30 KB shell (mostly static), `/donate` a sub-50 KB shell, `/article/*` its own bundle. Combined with `defer` on the rest, expected to drop median TBT from 6 s → under 1 s.
+
+- **OneTrust consent SDK runs synchronously in `<head>` (`OtAutoBlock.js`, no async/defer).**
+  - **Prioritization**: 60.00
+    - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 4 — 1,225 ms of blocking script execution in the parse-critical path
+      - **Usability**: 3
+      - **User Delight**: 2
+  - **Baseline**: `OtAutoBlock.js` loads with no `async` or `defer` attribute (verified via `document.scripts` scan). It blocks HTML parsing for ~1.2 s. The `otSDKStub.js` wrapper is `async` (correct), but the heavy blocker runs sync.
+  - **Cause**: OneTrust's auto-blocking behavior is intentional — it blocks ad scripts until consent is captured. The implementation chose synchronous execution to ensure consent is set before any bid fires.
+  - **Solution**: switch to OneTrust's `async` mode + use the `OneTrustStub` callback for ad-script gating. Or self-host `OtAutoBlock.js` with `defer` and let the consent state propagate through a `LocalStorage` write.
+
+- **webcontentassessor.com is an unnecessary vendor consuming 1.87 s of script time per pageview.**
+  - **Prioritization**: 50.00
+    - **Effort**: 1 · **Reach**: 5 · **Confidence**: 3
+    - **Impact**:
+      - **Initial Load**: 5 — the single largest script-TBT contributor on the homepage
+      - **Usability**: 3
+      - **User Delight**: 1
+  - **Baseline**: Lighthouse `bootup-time` audit flags `scripts.mf.webcontentassessor.com/scripts/...` at **1,870 ms script time** on the homepage — more than any other script, including GAM, Permutive, or OneTrust. The script downloads 101 KB compressed and runs on every page.
+  - **Cause**: vendor provides "content quality assessment" — typically a scoring/feedback tool for editors. No observable user-facing behavior; doesn't gate or modify content delivery.
+  - **Solution**: cut the vendor entirely if no editor team uses the score. If needed, run it only on `/article/*` URLs (where editor review happens) instead of every page. Effort = 1: a single tag-manager exclusion rule.
+
+- **AVIF is not served on any homepage image; JPEG and WebP only.**
+  - **Prioritization**: 30.00
+    - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 3 — AVIF would save ~25–50% on image bytes (≈ 0.5 MB on the homepage's 1.9 MB image bucket)
+      - **Usability**: 2
+      - **User Delight**: 2
+  - **Baseline**: Lighthouse image-format breakdown shows **19 WebP + 8 JPEG + 24 PNG + 10 SVG + 61 GIF + 0 AVIF**. The `dims.apnews.com` CDN URL pattern is `/format/webp/quality/90/` — supports WebP via URL param but no AVIF variant is generated.
+  - **Cause**: the CDN pipeline outputs WebP but not AVIF. AVIF encoders are CPU-expensive and historically had weak tooling support; many image pipelines stopped at WebP.
+  - **Solution**: add an AVIF encode step to the CDN pipeline. Switch `format/webp` → `format/avif` in the hero-image URLs (the 4 top hero images are WebP today, ~750 KB total). Browsers that don't support AVIF fall back to WebP via `<picture>` element. Save ≈ 200 KB on the homepage's image bucket alone.
+
+---
+
 ## Mobile-specific
 
 Mobile findings are scoped to behaviors that are unique to mobile devices or significantly worse on mobile vs desktop. All measurements here are taken under the [Mobile measurement profile](./baseline.md#mobile-measurement-profile) — Slow 4G, 4× CPU throttle, 412×823 viewport.
