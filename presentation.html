@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>apnews.com · Web Performance Audit · FE413</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              paper: "#f5f4ef",
+              paper2: "#eae9e2",
+              ink: "#14140e",
+              inksoft: "#5a5a50",
+              cobalt: "#1f3a8a",
+              bad: "#b3261e",
+              warn: "#c2410c",
+              ok: "#15803d",
+            },
+            fontFamily: {
+              display: ["Newsreader", "Georgia", "serif"],
+              body: ["Hanken Grotesk", "system-ui", "sans-serif"],
+              mono: ["DM Mono", "ui-monospace", "monospace"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      html,
+      body,
+      .reveal {
+        background: #f5f4ef;
+        color: #14140e;
+        font-family: "Hanken Grotesk", system-ui, sans-serif;
+      }
+      .reveal em {
+        font-style: italic;
+        color: #1f3a8a;
+      }
+      @keyframes blink {
+        50% { opacity: 0; }
+      }
+      .cursor {
+        animation: blink 1s step-end infinite;
+        color: #1f3a8a;
+      }
+      .section-banner {
+        font-family: "DM Mono", ui-monospace, monospace;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        padding: 0.5rem 1.5rem;
+        border: 1px solid #1f3a8a;
+        color: #1f3a8a;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      .perf-pill {
+        font-family: "DM Mono", ui-monospace, monospace;
+        font-size: 0.85rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+      }
+      .perf-pill.bad { color: #b3261e; }
+      .perf-pill.warn { color: #c2410c; }
+      .perf-pill.ok { color: #15803d; }
+      .shot-frame {
+        border: 1px solid #14140e;
+        background: #fff;
+        overflow: hidden;
+      }
+      .shot-frame img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="fixed inset-x-0 bottom-4 z-50 flex items-center justify-between border-t border-ink px-8 font-mono text-xs uppercase tracking-[0.18em] text-ink"
+    >
+      <span id="pageno">01 / 09</span>
+      <span id="sectionlabel">baseline · the data</span>
+      <span>FE413 · audit · 2026</span>
+    </div>
+
+    <div class="reveal">
+      <div class="slides">
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 1 · TITLE                                              -->
+        <!-- ============================================================ -->
+        <section data-section="title · apnews.com audit">
+          <div class="mx-auto flex max-w-4xl flex-col items-center gap-7 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">FE413 · web performance audit</span>
+            <h1 class="max-w-3xl font-display text-7xl font-normal leading-[1.05]">
+              <em>apnews.com</em> is shipping a slow newsroom.
+            </h1>
+            <p class="max-w-2xl font-body text-xl text-inksoft">
+              Eight representative pages. <b class="text-ink">Every single one</b> fails the
+              Lighthouse mobile performance threshold. Main-thread blocking time is dominated by
+              third-party scripts the newsroom does not own or need on first paint.
+            </p>
+            <div class="flex items-center gap-3 pt-2">
+              <span class="section-banner">mobile · simulated 4G · median user</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 2 · THE 8 PAGES                                        -->
+        <!-- ============================================================ -->
+        <section data-section="baseline · the 8 pages">
+          <div class="mx-auto flex max-w-6xl flex-col gap-5 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">baseline · what we measured</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              Eight pages. <em>Zero green scores.</em>
+            </h2>
+            <div class="grid grid-cols-4 gap-3 pt-2">
+              <div class="shot-frame">
+                <img src="screenshots/01-homepage.png" alt="homepage" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>homepage</span><span class="perf-pill bad">25</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/02-world-news.png" alt="world-news" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>world-news</span><span class="perf-pill bad">25</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/03-single-article.png" alt="article" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>article</span><span class="perf-pill bad">24</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/04-photography.png" alt="photography" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>photography</span><span class="perf-pill bad">26</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/05-quizzes.png" alt="quizzes" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>quizzes</span><span class="perf-pill bad">26</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/06-donate.png" alt="donate" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>donate</span><span class="perf-pill bad">2</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/07-search.png" alt="search" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>search</span><span class="perf-pill bad">26</span>
+                </div>
+              </div>
+              <div class="shot-frame">
+                <img src="screenshots/08-newsletters.png" alt="newsletters" />
+                <div class="flex items-center justify-between border-t border-ink bg-paper2 px-2 py-1 font-mono text-[10px]">
+                  <span>newsletters</span><span class="perf-pill bad">25</span>
+                </div>
+              </div>
+            </div>
+            <p class="font-body text-sm text-inksoft">
+              Lighthouse mobile, simulated 4G · scores 0–100 · Lighthouse flag = "poor" below 50.
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 3 · THE NUMBERS                                        -->
+        <!-- ============================================================ -->
+        <section data-section="baseline · the numbers">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-8 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">baseline · the numbers</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              <em>22–46 s</em> for the largest story on the page to render.
+            </h2>
+            <div class="grid w-full grid-cols-4 gap-6 pt-2 text-center">
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">22–46<span class="text-3xl"> s</span></span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">LCP (Largest Contentful Paint)</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">5–9<span class="text-3xl"> s</span></span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">TBT (Total Blocking Time)</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">9.1<span class="text-3xl"> MB</span></span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">page weight on first load</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">0.8</span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">CLS on /donate (page-level)</span>
+              </div>
+            </div>
+            <p class="max-w-3xl font-body text-base text-inksoft">
+              Google's own threshold for a "good" LCP is <b class="text-ink">2.5 s</b>.
+              Every measured page is <b class="text-ink">9–18× over</b>.
+              TBT of even 0.6 s makes scrolling visibly janky on mid-range Android.
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 4 · ROOT CAUSE — third-party scripts                   -->
+        <!-- ============================================================ -->
+        <section data-section="root cause · third-party">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-6 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">root cause · who is on the main thread</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              The newsroom does not own the first paint.
+            </h2>
+            <div class="w-full rounded border border-ink bg-paper2 p-4 text-left">
+              <div class="mb-3 font-mono text-xs uppercase tracking-widest text-cobalt">bootup-time · top scripts on first load (homepage)</div>
+              <div class="grid grid-cols-[1fr_auto_auto] gap-x-6 gap-y-1 font-mono text-sm">
+                <span>apnews.com (first-party control bundle)</span><span class="text-right">3 704 ms</span><span class="text-inksoft">total</span>
+                <span class="text-inksoft">— attributable to third parties:</span><span></span><span></span>
+                <span>webcontentassessor.com (content quality script)</span><span class="text-right">1 870 ms</span><span class="text-inksoft">script</span>
+                <span>permutive.com (audience platform)</span><span class="text-right">1 764 ms</span><span class="text-inksoft">total</span>
+                <span>dianomi.com (ad context)</span><span class="text-right">1 692 ms</span><span class="text-inksoft">script</span>
+                <span>googletag / GAM (header bidding)</span><span class="text-right">1 407 ms</span><span class="text-inksoft">script</span>
+                <span>cookielaw.org / OneTrust (consent SDK)</span><span class="text-right">1 258 ms</span><span class="text-inksoft">script</span>
+                <span>kameleoon.io (A/B testing)</span><span class="text-right">1 182 ms</span><span class="text-inksoft">total</span>
+                <span>n.tv (native ad network)</span><span class="text-right">1 126 ms</span><span class="text-inksoft">total</span>
+              </div>
+            </div>
+            <p class="max-w-3xl font-body text-base text-inksoft">
+              Every one of those scripts runs <b class="text-ink">before the headline image paints</b>.
+              None of them is required to render a news article. Together they push TBT past the
+              threshold where scrolling becomes unusable on entry-level Android.
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 5 · METHODOLOGY                                        -->
+        <!-- ============================================================ -->
+        <section data-section="methodology">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-6 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">methodology · how we audited</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              Reproducible. Scripted. <em>One command.</em>
+            </h2>
+            <div class="grid w-full grid-cols-3 gap-4 pt-2 text-left">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">measurement</div>
+                <div class="mt-1 font-display text-2xl">Lighthouse CLI</div>
+                <div class="mt-2 text-sm text-inksoft">v12, mobile preset, simulated 4G throttling. Headless Chromium 150, fresh profile per run, cookies pre-accepted.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">coverage</div>
+                <div class="mt-1 font-display text-2xl">8 page archetypes</div>
+                <div class="mt-2 text-sm text-inksoft">Homepage, section index, single article, photo hub, interactive hub, conversion (/donate), search, newsletter signup.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">prioritization</div>
+                <div class="mt-1 font-display text-2xl">RICE scoring</div>
+                <div class="mt-2 text-sm text-inksoft">Reach × Impact × Confidence / Effort across 15 findings. Top quartile (≥15) sequenced into 3 delivery phases.</div>
+              </div>
+            </div>
+            <div class="font-mono text-xs uppercase tracking-widest text-cobalt">
+              justfile · recipes: setup · shoot · audit · audit-all · report
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 6 · TOP RECOMMENDATIONS                                -->
+        <!-- ============================================================ -->
+        <section data-section="findings · top recommendations">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">findings · top quartile by RICE</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              Six fixes. <em>Three of them ship in week one.</em>
+            </h2>
+            <div class="w-full rounded border border-ink bg-paper2 p-4 text-left">
+              <table class="w-full font-mono text-xs">
+                <thead class="text-cobalt uppercase tracking-widest">
+                  <tr><th class="py-1 text-left">id</th><th class="py-1 text-left">fix</th><th class="py-1 text-right">effort</th><th class="py-1 text-right">RICE</th><th class="py-1 text-left">phase</th></tr>
+                </thead>
+                <tbody class="text-sm">
+                  <tr class="border-t border-ink"><td class="py-1.5">F-07</td><td class="py-1.5">Add <code>defer</code>/<code>async</code> to every non-critical script in <code>&lt;head&gt;</code></td><td class="py-1.5 text-right">XS</td><td class="py-1.5 text-right">100</td><td class="py-1.5">phase 1</td></tr>
+                  <tr class="border-t border-ink"><td class="py-1.5">F-01b</td><td class="py-1.5">Identify & defer the top 3 TBT-contributor scripts (ads, Viafoura)</td><td class="py-1.5 text-right">S</td><td class="py-1.5 text-right">50</td><td class="py-1.5">phase 1</td></tr>
+                  <tr class="border-t border-ink"><td class="py-1.5">F-03</td><td class="py-1.5">Donate page CLS (0.8) — reserve dimensions on late-injecting elements</td><td class="py-1.5 text-right">S</td><td class="py-1.5 text-right">40</td><td class="py-1.5">phase 1</td></tr>
+                  <tr class="border-t border-ink"><td class="py-1.5">F-04</td><td class="py-1.5">Article-template CLS (0.069) — reserve ad-slot and iframe dims</td><td class="py-1.5 text-right">S</td><td class="py-1.5 text-right">40</td><td class="py-1.5">phase 1</td></tr>
+                  <tr class="border-t border-ink"><td class="py-1.5">F-14</td><td class="py-1.5">Capture CrUX field data on the 8 audited pages</td><td class="py-1.5 text-right">XS</td><td class="py-1.5 text-right">40</td><td class="py-1.5">phase 1</td></tr>
+                  <tr class="border-t border-ink"><td class="py-1.5">F-02b</td><td class="py-1.5">LCP image: preconnect, AVIF + <code>srcset</code>, reserve dimensions</td><td class="py-1.5 text-right">M</td><td class="py-1.5 text-right">33</td><td class="py-1.5">phase 1</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="font-body text-sm text-inksoft">
+              All six are <b class="text-ink">low-effort front-end changes</b>. No backend rebuild, no ads product change.
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 7 · PHASED ROLLOUT                                     -->
+        <!-- ============================================================ -->
+        <section data-section="phased rollout">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-6 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phased rollout</span>
+            <div class="grid w-full grid-cols-3 gap-4 text-left">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-[10px] uppercase tracking-widest text-cobalt">phase 1 · week 1</div>
+                <div class="mt-1 font-display text-2xl italic">Stop the bleed</div>
+                <ul class="mt-3 space-y-1 font-body text-sm">
+                  <li>✓ <code>defer</code>/<code>async</code> every non-critical script (F-07)</li>
+                  <li>✓ Identify & defer top 3 TBT culprits (F-01b)</li>
+                  <li>✓ Reserve dimensions on donate (F-03) + article (F-04)</li>
+                  <li>✓ Capture CrUX field data on all 8 pages (F-14)</li>
+                </ul>
+                <div class="mt-3 border-t border-ink pt-2 font-mono text-xs text-inksoft">
+                  est. <b class="text-cobalt">−60%</b> TBT · <b class="text-cobalt">+30</b> perf · CLS 0.8 → 0.05
+                </div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-[10px] uppercase tracking-widest text-cobalt">phase 2 · weeks 2–3</div>
+                <div class="mt-1 font-display text-2xl italic">Fix the layout</div>
+                <ul class="mt-3 space-y-1 font-body text-sm">
+                  <li>✓ LCP: AVIF + <code>srcset</code> + preconnect (F-02b)</li>
+                  <li>✓ Photo hub: AVIF, preload, eager grid row (F-09)</li>
+                  <li>✓ Move ad bidding to <code>requestIdleCallback</code> (F-05)</li>
+                  <li>✓ Profile & defer post-LCP fetches on articles (F-08)</li>
+                </ul>
+                <div class="mt-3 border-t border-ink pt-2 font-mono text-xs text-inksoft">
+                  est. <b class="text-cobalt">−60%</b> LCP · perf <b class="text-cobalt">→ 75–85</b>
+                </div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-[10px] uppercase tracking-widest text-cobalt">phase 3 · weeks 4–6</div>
+                <div class="mt-1 font-display text-2xl italic">Reset the contract</div>
+                <ul class="mt-3 space-y-1 font-body text-sm">
+                  <li>✓ Install <code>web-vitals</code> + beacon RUM (F-15)</li>
+                  <li>✓ Route-based code splitting (F-06)</li>
+                  <li>✓ Performance budget in CI (perf gate)</li>
+                  <li>✓ Vendor SLA: each 3P pays for its 3P-budget</li>
+                </ul>
+                <div class="mt-3 border-t border-ink pt-2 font-mono text-xs text-inksoft">
+                  est. <b class="text-cobalt">hold &gt;75</b> perf long-term, with field data
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 8 · PROJECTED IMPACT                                   -->
+        <!-- ============================================================ -->
+        <section data-section="projected impact">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-8 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">projected impact · conservative estimates</span>
+            <div class="flex flex-wrap items-start justify-center gap-12">
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">22–46 s</span>
+                <span class="mt-1 font-mono text-xs text-inksoft">→</span>
+                <span class="font-display text-7xl italic leading-none text-ok">2.5–4 s</span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">LCP, median user</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">5–9 s</span>
+                <span class="mt-1 font-mono text-xs text-inksoft">→</span>
+                <span class="font-display text-7xl italic leading-none text-ok">&lt; 200 ms</span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">Total Blocking Time</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">9.1 MB</span>
+                <span class="mt-1 font-mono text-xs text-inksoft">→</span>
+                <span class="font-display text-7xl italic leading-none text-ok">~3 MB</span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">page weight</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="font-display text-7xl italic leading-none text-cobalt">25</span>
+                <span class="mt-1 font-mono text-xs text-inksoft">→</span>
+                <span class="font-display text-7xl italic leading-none text-ok">75–85</span>
+                <span class="mt-3 font-mono text-xs uppercase tracking-widest text-inksoft">Lighthouse performance</span>
+              </div>
+            </div>
+            <p class="max-w-3xl font-body text-base text-inksoft">
+              Conservative, no ads product change, no backend rebuild. Within <b class="text-ink">3 weeks</b>
+              the homepage alone could move from <b class="text-ink">CWV red</b> to <b class="text-ink">CWV green</b>.
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 9 · CTA / NEXT STEPS                                   -->
+        <!-- ============================================================ -->
+        <section data-section="cta · ship it">
+          <div class="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">cta · ship phase 1 next sprint</span>
+            <h1 class="max-w-3xl font-display text-6xl font-normal leading-tight">
+              Stop measuring. <em>Start deferring.</em>
+            </h1>
+            <div class="grid w-full grid-cols-2 gap-4 pt-2 text-left">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">what we ship next sprint</div>
+                <ul class="mt-2 space-y-1 font-body text-sm">
+                  <li>✓ PR-1: defer/async every non-critical script (F-07)</li>
+                  <li>✓ PR-2: defer top 3 TBT-contributor scripts (F-01b)</li>
+                  <li>✓ PR-3: reserve dimensions on donate + article (F-03, F-04)</li>
+                  <li>✓ PR-4: CrUX field-data instrumentation (F-14)</li>
+                </ul>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">what we need from stakeholders</div>
+                <ul class="mt-2 space-y-1 font-body text-sm">
+                  <li>→ Ads product: confirm GAM can lazy-load</li>
+                  <li>→ Editorial: 3P allowlist for interactive hubs</li>
+                  <li>→ Eng leadership: sign the perf budget gate</li>
+                  <li>→ Data: RUM ownership for phase 3 dashboard</li>
+                </ul>
+              </div>
+            </div>
+            <p class="font-mono text-sm uppercase tracking-widest text-cobalt pt-4">
+              github.com/esauflores/apnews-audit
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        transition: "fade",
+        controls: true,
+        progress: true,
+        center: true,
+        margin: 0.06,
+        width: 1280,
+        height: 720,
+        plugins: [RevealNotes],
+      });
+
+      const total = Reveal.getTotalSlides();
+      function updateBars() {
+        const i = Reveal.getIndices().h + 1;
+        document.getElementById("pageno").textContent =
+          String(i).padStart(2, "0") + " / " + String(total).padStart(2, "0");
+        const label = Reveal.getCurrentSlide().getAttribute("data-section");
+        if (label) document.getElementById("sectionlabel").textContent = label;
+      }
+      Reveal.on("ready", updateBars);
+      Reveal.on("slidechanged", updateBars);
+    </script>
+  </body>
+</html>
