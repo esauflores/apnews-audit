@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW6 complete — ICE prioritization system added alongside RICE, with explicit Impact derivation rule (max of Initial Load / Usability) and WSJF as a third framework. Triangulation narrows the Phase 1 plan to 4 items that are top-tier in all 3 systems.
+**Status:** HW7 complete — Build outputs section in baseline.md (JS/CSS bundles, images, 3P loading strategy) + 4 bundle-related corrective findings in findings.md. New `scripts/build-capture.mjs` (puppeteer-based, coverage API for unused-JS/CSS detection).
 
 ---
 
@@ -94,8 +94,8 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 ## What's in this repo
 
 - `README.md` — this file
-- `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity (cold/warm load, compression, caching). Per-page sweep across 8 archetypes.
-- `findings.md` — 10 main findings (Rendering + Networking + Accessibility) + 2 mobile-specific findings + 6 appendix findings. Each independently observable, RICE-scored.
+- `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity + Build outputs (JS/CSS bundles, image formats, 3P loading strategy). Per-page sweep across 8 archetypes.
+- `findings.md` — 10 main findings + 4 Build-outputs findings + 2 mobile-specific findings + 6 appendix findings. Each independently observable, RICE-scored.
 - `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 12 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
 - `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
