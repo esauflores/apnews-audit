@@ -112,20 +112,66 @@ _The only page in the audit where CLS dominates the score. The 0.8 is 8× the "g
 
 ---
 
-## Network Activity (homepage, mobile, single cold load)
+## Network Activity (homepage, mobile)
+
+### Cold load (clean profile, fresh cache)
+
+| Bucket       | Requests | Transfer (wire) | Resource (uncompressed) | Compression savings |
+| ------------ | -------: | --------------: | ----------------------: | ------------------: |
+| **Script**   |     132  |       4.39 MB   |               16.06 MB  |             **73%** |
+| **Image**    |     166  |       1.92 MB   |                1.87 MB  |              −3%   |
+| **Font**     |      10  |       0.61 MB   |                0.60 MB  |              −2%   |
+| **Document** |      49  |       0.55 MB   |                3.33 MB  |             **83%** |
+| **Fetch**    |      95  |       0.35 MB   |                1.67 MB  |             **79%** |
+| **Stylesheet** |     7  |       0.15 MB   |                1.06 MB  |             **86%** |
+| **Other** (XHR, Manifest, Preflight, Ping) |   203  |       0.18 MB |       0.35 MB      |             **44%** |
+| **TOTAL**    | **662**  | **8.15 MB**     |          **24.94 MB**   |         **67.3%**   |
 
 - **protocol**: http/2
-- **requests**: 662
-- **total transfer**: 8.15 MB
-  - **Script**: 4.39 MB (54%)
-  - **Image**: 1.92 MB (24%)
-  - **Font**: 0.61 MB (7%)
-  - **Document**: 0.55 MB (7%)
-  - **Other** (Fetch + XHR + Manifest + Preflight): 0.68 MB (8%)
-- **compression**: text is br/gzip; binary (images, fonts) is not — modern formats (AVIF, WebP, woff2) are partially deployed, leaving bytes on the table
-- **caching**: short TTL on first-party assets (hash filenames confirm 1-year cache on hashed JS/CSS bundles, but the initial HTML and un-hashed assets re-fetch every visit)
+- **JS/CSS vs images**: JS+CSS = **4.54 MB** (55.7%) vs images = **1.92 MB** (23.6%). The script bucket is 2.4× the image bucket — atypical for a content site, where the hero image usually dominates. AP News's "weight" is in JavaScript, not pixels.
+- **Compression**: text payloads (HTML, JS, CSS, JSON) compress **73–86%** (br/gzip is well-configured). Binary payloads (images, fonts) show **negative** compression because JPEG/WOFF are already compressed — the wire overhead is HTTP headers and chunk encoding.
+- **Caching** (cold-load observation): content-hashed first-party bundles ship with 1-year `Cache-Control: max-age=31536000`. The initial HTML and un-hashed tag-manager / ad-bidder responses use 2-minute TTL.
 
-_Re-runs of the same capture without throttling would let us separate "warm-cache cost" from "cold-cache cost"; out of scope for this session._
+### Soft refresh (warm cache, same context, second navigation)
+
+Captured via puppeteer: navigate → reload with cache intact → re-measure.
+
+| Bucket          | Cold requests | Warm requests | Δ requests | Cold transfer | Warm transfer | Δ transfer |
+| --------------- | ------------: | ------------: | ---------: | ------------: | ------------: | ---------: |
+| **Script**      |          238  |          174  |      −27%  |      4.39 MB  |      3.49 MB  |     −20%   |
+| **Image**       |          166  |          325  |      +96%  |      1.92 MB  |      2.57 MB  |     +34%   |
+| **Font**        |           10  |           30  |     +200%  |      0.61 MB  |      3.09 MB  |    +407%   |
+| **Document**    |           49  |           63  |      +29%  |      0.55 MB  |      0.33 MB  |     −40%   |
+| **TOTAL**       |     **1096**  |     **806**   |    **−26%**|    **10.72 MB**|    **10.75 MB**|   **~0%**  |
+
+- **Request reduction**: 26% fewer requests on warm cache. Looks healthy on the surface.
+- **Transfer reduction**: **0%** — warm load actually transfers slightly *more* bytes than cold load. This is the headline finding for this section: **the cache benefit is eaten alive by third-party scripts and tracking pixels that re-fetch on every pageview.**
+- **The font bucket is the worst offender**: 10 requests → 30 requests on warm (3× more) because the page re-evaluates font subsets / fallbacks on reload. Bytes go from 0.61 MB to 3.09 MB (5× more).
+- **Top warm-load talkers** (largest responses that re-fetch every visit):
+  - 509 KB blob: app bundle (re-instantiated)
+  - 496 KB blob: app bundle (re-instantiated)
+  - 373 KB reCAPTCHA — third-party, not cached
+  - 369 KB question image from Riverdrop (preloaded but not seen on first paint)
+  - 338 KB HLS video segment from Primis (preloaded ahead of play)
+  - 328 KB hero image from `dims.apnews.com` (cached, but a different size variant)
+  - 274 KB ad iframe from `imasdk.googleapis.com`
+  - 227 KB JWPlayer CloudFront segment
+  - 196 KB GAM `pubads_impl.js` — third-party, not cached
+  - 181 KB GTM `gtm.js` — third-party, not cached
+
+### Compression summary
+
+- **Text payloads** are compressed **73–86%** (br/gzip). No improvement available.
+- **Images** ship as JPEG / WebP mix; **AVIF** is missing from the homepage's first 10 images. Switching the hero to AVIF would save an estimated **40–50%** of the image bytes (typical JPEG→AVIF ratio at the same perceptual quality).
+- **Fonts** ship as `.woff` and `.woff2` mix; pure `.woff2` would shave ~30% off the font bytes.
+- **No protocol-level optimizations** observed: HTTP/3 not advertised, Brotli served consistently, no early-hints (103) used.
+
+### Caching summary
+
+- **Static assets with hash filenames** cache for **1 year** as expected.
+- **Initial HTML** caches for **2 minutes** — fine for content freshness, but means the homepage always pays the HTML/redirect roundtrip.
+- **Third-party scripts** (GTM, GAM, reCAPTCHA, OneTrust, Permutive, etc.) **do not cache across visits** — they're served from third-party origins with their own cache policies, often `no-cache` or short TTL, and they re-fetch on every navigation.
+- **Result**: warm-cache benefit is ~26% by request count but ~0% by bytes. Caching only helps first-party JS/CSS, which is itself dwarfed by the 3P payload.
 
 ---
 

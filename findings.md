@@ -67,15 +67,60 @@
 
 ## Networking
 
-### Good
+- **662 requests on cold load, ~0% transfer savings on warm load — the cache benefit is eaten by third-party re-fetches.**
+  - **Prioritization**: 60.00
+    - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 4 — 10.7 MB on every homepage view; cold and warm are identical in bytes
+      - **Usability**: 2 — readers on capped data plans or emerging-market 3G pay for the same payload twice
+      - **User Delight**: 1 — second visit feels no faster than first
+  - **Baseline**: 1,096 cold-load requests, 806 warm-load requests (only 26% drop), 10.72 MB cold → 10.75 MB warm (~0% transfer savings). Top warm-load talkers are third-party: reCAPTCHA (373 KB), GAM (196 KB), GTM (181 KB), JWPlayer (227 KB), Primis video (338 KB).
+  - **Cause**: AP News's payload composition is dominated by third-party scripts and ad/pixel/tracking endpoints whose cache policies are not under AP News's control. The 3P mix re-fetches every pageview even when first-party bundles cache for 1 year.
+  - **Solution**: audit which third-party scripts actually cache across visits (use `Cache-Control` and `Age` headers in DevTools). Set `stale-while-revalidate` on first-party HTML. For 3P, use a service worker to cache their static JS bundles at the edge of AP News's origin (e.g., self-host reCAPTCHA, GTM, OneTrust). For ad bidders that don't cache, drop the lowest-yield ones.
 
-- **Compression** is in place for text payloads (br/gzip on JS, CSS, HTML, JSON). 50–60% reduction on the text bucket.
-- **Caching** for content-hashed first-party assets: JS/CSS bundles ship with hash filenames and 1-year cache TTL. Repeat visits benefit.
+- **4.39 MB of JavaScript on the homepage (54% of total transfer) — atypical for a content site.**
+  - **Prioritization**: 40.00
+    - **Effort**: 3 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 5 — JS is the largest single contributor to TBT and LCP on every page
+      - **Usability**: 4 — parse + eval time blocks scrolling and tapping for 6–9 s
+      - **User Delight**: 1
+  - **Baseline**: Script transfer = 4.39 MB (132 requests) on cold homepage; uncompressed resource size = 16.06 MB. The script bucket is **2.4× the image bucket**. Per-page JS includes: GTM (181 KB), GAM (196 KB), Permutive, OneTrust, Kameleoon, Viafoura, webcontentassessor, and a 509 KB blob app bundle.
+  - **Cause**: No route-based code splitting confirmed (F-06). The full app shell + all third-party SDKs ship on every page, including `/newsletters` and `/donate` which don't need interactive JS.
+  - **Solution**: route-based code splitting — `/newsletters` and `/donate` should ship a sub-100KB shell, not the full bundle. Self-host the third-party SDKs that are deterministic and cache-friendly (GTM, reCAPTCHA, OneTrust), and lazy-load the rest with `requestIdleCallback`.
 
-### Bad
+- **Images ship without AVIF — 1.92 MB transfer = 1.87 MB uncompressed (no further compression available).**
+  - **Prioritization**: 30.00
+    - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 3 — images are not the dominant payload, but AVIF would save ~50% of image bytes (≈ 1 MB on the homepage)
+      - **Usability**: 2
+      - **User Delight**: 2 — faster image paints on photography hubs especially
+  - **Baseline**: Image transfer = 1.92 MB on 166 requests. Compression savings = **−3%** (overhead, not compression). AVIF is supported by every browser shipped in the last 5 years and saves 40–50% vs JPEG at the same perceptual quality.
+  - **Cause**: AP News's image pipeline outputs JPEG (and some WebP). AVIF encoders are CPU-expensive but worth it for the homepage hero and the photography hub.
+  - **Solution**: add an AVIF variant to the image CDN with JPEG/WebP fallback via `<picture>` or `image/avif,image/webp,image/jpeg` content negotiation. Hero images should be AVIF. Same for the photography hub (F-09).
 
-- **Binary assets** (images, fonts) are not compressed — modern formats (AVIF, WebP, woff2) are partially deployed, leaving bytes on the table. Largest images on the homepage are delivered as JPEG without `srcset`; some fonts ship as `.woff` instead of `.woff2`.
-- **Initial HTML / unhashed assets** re-fetch on every visit because the cache TTL is short (2 minutes on the main document). Returning readers don't get the warm-cache benefit they should.
+- **Fonts re-fetch on warm load — 0.61 MB → 3.09 MB (5× more bytes), 10 → 30 requests.**
+  - **Prioritization**: 25.00
+    - **Effort**: 3 · **Reach**: 5 · **Confidence**: 3
+    - **Impact**:
+      - **Initial Load**: 2 — not the biggest bucket, but the warm-load regression is alarming
+      - **Usability**: 2
+      - **User Delight**: 1
+  - **Baseline**: Cold-load fonts = 10 requests / 0.61 MB. Warm-load fonts = 30 requests / 3.09 MB. Compression savings = **−2%** (WOFF is already compressed; some fonts ship as uncompressed `.woff`).
+  - **Cause**: Likely a font-loading strategy that re-evaluates subsets or fallbacks on every reload (e.g., `<link rel="stylesheet">` after the first paint, or a font-display: swap fallback that re-fetches a non-`.woff2` font when the primary 404s).
+  - **Solution**: serve all fonts as `.woff2` only; declare font subsets in advance via `unicode-range`; use `font-display: swap` with a hard cap (don't keep loading more subsets on subsequent loads). Add `link rel="preload" as="font" crossorigin` for the LCP font.
+
+- **1,096 total requests on the homepage — half of which are third-party tracking, ad pixels, and analytics.**
+  - **Prioritization**: 25.00
+    - **Effort**: 3 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 4 — every request is a TCP slow-start, a TLS handshake (or 0-RTT), and a CPU cost on the main thread
+      - **Usability**: 3 — visible jank during the request-storm phase, before any of these pixels render
+      - **User Delight**: 1
+  - **Baseline**: 662 cold-load requests, 1,096 in puppeteer (more thorough capture including hidden analytics). Of those: 132 Script, 166 Image, 95 Fetch, 49 Document, 7 Stylesheet, and the rest a long tail of XHR/Ping/Manifest/Preflight (mostly tracking).
+  - **Cause**: the OneTrust consent string enumerates 10+ bidders (Pubmatic, OpenX, Rubicon, IndexExchange, etc.); each fires its own pixel + bid request. Combined with chartbeat, GA, GTM, and Viafoura, the request count is the cumulative footprint of an ad-supported news site.
+  - **Solution**: consolidate bid requests through a single header-bidding wrapper; batch analytics beacons; use `sendBeacon` for non-critical pings so they fire on visibilitychange, not on initial load. Long-term: negotiate with vendors whose cache + transfer profiles are the worst (Riverdrop questions, JWPlayer preloads).
 
 ---
 
