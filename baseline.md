@@ -211,7 +211,9 @@ Captured via puppeteer: navigate → reload with cache intact → re-measure.
 
 ## Build outputs (homepage)
 
-Captured 2026-07-23 via a targeted Lighthouse run with build-specific audits enabled (`unused-javascript`, `unused-css-rules`, `modern-image-formats`, `uses-responsive-images`, `render-blocking-resources`, `total-byte-weight`), plus direct inspection of the production HTML and main bundles.
+Captured 2026-07-23 via a targeted Lighthouse run with build-specific audits enabled (`unused-javascript`, `unused-css-rules`, `modern-image-formats`, `uses-responsive-images`, `render-blocking-resources`, `total-byte-weight`), plus direct inspection of the production HTML and main bundles via `scripts/build-capture.mjs` (`just build-capture`).
+
+For exact byte counts (Lighthouse uses compressed transfer size; `build-capture.mjs` reads `content-length` headers which are absent under chunked transfer encoding), the Lighthouse JSON in `lighthouse/01-homepage.json` is the source of truth.
 
 ### JavaScript bundles
 

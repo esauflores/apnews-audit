@@ -100,8 +100,9 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
-- `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report`.
+- `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture`.
 - `scripts/setup-profile.js` — puppeteer-driven OneTrust consent acceptance.
+- `scripts/build-capture.mjs` — inspect homepage build outputs (JS/CSS bundles, image formats, 3P loading strategy, source-map exposure).
 - `scripts/targets.tsv` — the 8 audited pages.
 
 ## Methodology references

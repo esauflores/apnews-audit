@@ -110,6 +110,12 @@ audit-all parallel="1":
             fi
         ' _ {}
 
+# Capture build-output data from the homepage (JS/CSS bundles, image formats,
+# 3rd-party loading strategy, source-map exposure). Writes /tmp/build-capture.json.
+[doc("Inspect homepage build outputs (bundles, images, 3P loading strategy)")]
+build-capture:
+    @node scripts/build-capture.mjs
+
 # Capture a single page screenshot
 #   just screenshot https://apnews.com/ homepage
 screenshot url name="":
