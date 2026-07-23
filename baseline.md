@@ -1,7 +1,25 @@
 # Baseline
 
-*Captured: 2026-07-23 (single run, clean-state profile, mobile preset, simulated throttling).*
+*Captured: 2026-07-23 (single run, clean-state profile, **mobile** preset, **simulated throttling**).*
 *Tool: Lighthouse CLI v12 on headless Chromium 150. Raw reports in `lighthouse/`.*
+
+---
+
+## Mobile measurement profile
+
+All measurements in this audit are taken under Lighthouse's mobile preset (per Day 3 §4.1). This is the median reader profile for AP News — not desktop, not high-end mobile.
+
+| Setting | Value |
+| --- | --- |
+| **Form factor** | `mobile` (Lighthouse `--form-factor=mobile`) |
+| **Viewport** | 412 × 823 px (Moto G Power default — narrow phone screen) |
+| **Device pixel ratio** | 2.625 |
+| **User agent** | mobile Chrome on Android |
+| **Network throttling** | simulated **Slow 4G** — 1.6 Mbps down / 750 Kbps up / 150 ms RTT |
+| **CPU throttling** | **4× slowdown** (models mid-tier Android per Day 6 §1) |
+| **Throttling method** | `--throttling-method=simulate` (observation + simulation; pessimistic vs DevTools real-network throttling per Day 3 trade-off) |
+
+Desktop PSI scores, INP (lab-only), CrUX field data, and A11y/BP/SEO/Agentic Browsing categories are all marked "not captured" below. Re-running the audit with desktop preset or with `--only-categories=performance,accessibility,best-practices,seo` would populate those blocks; the qualitative finding (every page is poor) is not expected to change.
 
 ---
 
@@ -21,7 +39,7 @@ Primary page: [`/` (homepage)](https://apnews.com/).
 
 _Not captured in this session — Lighthouse was run with `--form-factor=mobile` to model the median reader (Day 3 §4.1). Re-run with default desktop preset to populate this block. No qualitative change expected: the bottleneck is third-party main-thread blocking, which is bounded by the same scripts on both form factors._
 
-### Threshold check
+### Threshold check (mobile)
 
 Every Core Web Vital is outside Google's "good" band on the mobile capture:
 
@@ -31,7 +49,7 @@ Every Core Web Vital is outside Google's "good" band on the mobile capture:
 | CLS    | 0.026        | ≤ 0.1  | ≤ 0.25              | > 0.25 |
 | INP    | n/a (lab)    | ≤ 200 ms | ≤ 500 ms          | > 500 ms |
 
-LCP is **18× over** the 2.5 s "good" threshold. CLS is technically "good" on the homepage, but it is **0.8 on `/donate`** (see per-page sweep + `findings.md` F-04).
+LCP is **18× over** the 2.5 s "good" threshold. CLS is technically "good" on the homepage, but it is **0.8 on `/donate`** (see per-page sweep + `findings.md` "Delayed ad makes page look broken").
 
 ---
 
@@ -123,7 +141,7 @@ At-a-glance, in the example's compact format:
   - third-party scripts (GTM, GAM, reCAPTCHA, OneTrust, Permutive, etc.): no-cache / short TTL — re-fetch on every pageview
 - **compression**: text (HTML/JS/CSS/JSON) br/gzip, 73–86%; binary (images, fonts) not compressed — JPEG/WOFF already compressed, no further wire savings available
 
-### Mobile
+### Mobile (homepage)
 
 - **requests (fresh)**: 662 (cold) / 806 (warm, +21.7%)
 - **transfer (fresh)**: 8.15 MB

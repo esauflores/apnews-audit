@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW4 complete — baseline + networking stats captured, 12 main findings (11 corrective + 2 good) made independently observable, RICE-scored, 3-phase rollout plan
+**Status:** HW5 complete — Mobile measurement profile explicit in baseline; 2 mobile-specific findings added (TBT × 4× CPU throttle; cellular data cost on warm visits)
 
 ---
 
@@ -94,9 +94,9 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 ## What's in this repo
 
 - `README.md` — this file
-- `baseline.md` — CWV + PSI + Network Activity (cold/warm load breakdown, compression, caching). Per-page sweep across 8 archetypes.
-- `findings.md` — 12 main findings (11 corrective + 2 good) structured per the instructor example, each independently observable. Appendix with 6 additional verified findings.
-- `prioritization.md` — RICE-scored table + 3-phase rollout plan (5 in phase 1, 5 in phase 2, 4 in phase 3).
+- `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity (cold/warm load, compression, caching). Per-page sweep across 8 archetypes.
+- `findings.md` — 10 main findings (Rendering + Networking + Accessibility) + 2 mobile-specific findings + 6 appendix findings. Each independently observable, RICE-scored.
+- `prioritization.md` — RICE table + 3-phase rollout plan + mobile callouts + override notes.
 - `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).

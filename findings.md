@@ -138,6 +138,34 @@
 
 ---
 
+## Mobile-specific
+
+Mobile findings are scoped to behaviors that are unique to mobile devices or significantly worse on mobile vs desktop. All measurements here are taken under the [Mobile measurement profile](./baseline.md#mobile-measurement-profile) — Slow 4G, 4× CPU throttle, 412×823 viewport.
+
+- **TBT of 6–9 s on mobile is amplified 4× by CPU throttling.**
+  - **Prioritization**: 100.00
+    - **Effort**: 1 · **Reach**: 5 · **Confidence**: 5
+    - **Impact**:
+      - **Initial Load**: 5 — every mobile pageview pays the full cost
+      - **Usability**: 5 — mobile users are the ones who tap and scroll; the freeze hits them first
+      - **User Delight**: 4 — "site is slow" verdict lands on the user's first interaction
+  - **Baseline**: Lighthouse `--throttling-method=simulate` models 4× CPU slowdown on mobile (Day 6 §1). Per-page TBT (ms): homepage 6,950 / world-news 6,370 / article 8,950 / photography 6,070 / quizzes 5,930 / donate 5,880 / search 5,960 / newsletters 6,060. Effective "feels-slow" penalty on mid-tier Android ≈ 24–36 s of main-thread work per pageview (TBT × CPU factor).
+  - **Cause**: the JS payload (4.39 MB on the homepage) is device-agnostic, but mobile CPUs run at ~1/4 the speed of desktop. Parse + eval cost is amplified ~4× on mobile vs desktop. Per Day 6 §1, mid-tier Android is the right model — it's the median AP News reader.
+  - **Solution**: same fix as the main "Initial page functionality is significantly delayed" finding — add `defer` to every non-critical script in `<head>` (RICE 100, 1 PR). Mobile-specific benefit: drops effective TBT from 24–36 s to ~1.5–2.5 s. The deferral is the single highest-leverage mobile fix.
+
+- **Mobile data cost: 10.75 MB per warm pageview on cellular.**
+  - **Prioritization**: 40.00
+    - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 4 — every warm visit transfers 10.75 MB
+      - **Usability**: 3 — slow cellular loads + metered-plan overage warnings
+      - **User Delight**: 2 — readers on capped data plans avoid the site
+  - **Baseline**: cold transfer = 8.15 MB, warm transfer = **10.75 MB** (cache benefit ≈ 0%). On a 5 GB/month mobile plan, each pageview is ~0.2% of the monthly budget; 5 article reads ≈ 1% of monthly data. Typical US mobile plans: $60–80/month for 5 GB. Emerging markets: $10–20/month for 1 GB — three pageviews ≈ 3% of monthly data.
+  - **Cause**: third-party scripts re-fetch on every pageview. 8 vendors × ~150 KB each ≈ 1.2 MB of recurring waste. Self-hosting these or using a service worker eliminates the waste.
+  - **Solution**: service worker to cache 3P static JS at AP News's origin (Phase 2). Reduce JS payload via route-based code splitting (Phase 2). Serve AVIF for hero images (Phase 2). Each is independently observable — service-worker cache hit ratio in DevTools, JS payload in `lighthouse/*.json`, image bytes in Network panel.
+
+---
+
 ## Additional findings (verified but not in the top set)
 
 - **Single-article template has moderate layout shift (CLS 0.069).** Distinct mechanism from `/donate` — late-loading ad slots and related-articles widgets injecting after the article body. Independently observable (every article view), but smaller impact than the donate-page CLS. Same fix pattern: reserve dimensions for late-loading iframes / ad slots in the article template. (RICE 40)

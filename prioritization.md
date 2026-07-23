@@ -87,6 +87,17 @@ The cutoff is not strict: a finding with RICE 26 (route-based code splitting) ma
 
 ---
 
+## Mobile callouts
+
+Two mobile-specific findings are in `findings.md` § Mobile-specific. They are callouts of existing main-set items with mobile emphasis — the underlying fix is the same, but the impact is amplified on cellular / mid-tier Android:
+
+- **TBT amplified 4× by mobile CPU throttle** (RICE 100) — same fix as "Initial page functionality is significantly delayed." Mobile users are the ones paying the full CPU cost.
+- **Mobile data cost on warm visits** (RICE 40) — same fix set as "Soft-refresh transfer savings are ~0%." Cellular users pay 10.75 MB per pageview.
+
+These do not introduce new phase items — they're reinforcing why the Phase 1 (defer scripts) and Phase 2 (service worker + code splitting + AVIF) work matters most for mobile readers.
+
+---
+
 ## Overrides
 
 Per Day 13 §5.4: overrides are legitimate and recorded. None applied yet. The audit ran without product owner input; if AP News weights any of these dimensions differently (e.g., ad revenue vs CWV), they'd shift Impact scores and re-rank. Document any overrides here.
