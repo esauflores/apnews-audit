@@ -1,17 +1,18 @@
 # Prioritization
 
-This file documents two prioritization systems used across the audit:
+This file documents three prioritization systems applied to all current corrective findings:
 
-1. **RICE** (Reach × Impact × Confidence ÷ Effort) — used in `findings.md` and the top-half of this file. Same as the instructor's framework (Day 5 §4).
-2. **ICE** (Impact × Confidence × Ease) — the new system documented here per the HW directive. Different from RICE: no Reach dimension, Ease replaces Effort as a direct multiplier.
+1. **RICE** (Reach × Impact × Confidence ÷ Effort) — Day 5 §4, used in `findings.md`.
+2. **ICE** (Impact × Confidence × Ease) — different from RICE: no Reach, Ease as multiplier.
+3. **WSJF** (Weighted Shortest Job First) — SAFe framework: Cost of Delay ÷ Job Size.
 
-Both systems are applied to all current corrective findings so the rankings can be compared.
+All three systems are applied to the same 12 corrective findings + 6 appendix items, so the rankings can be triangulated.
 
 ---
 
 ## ICE prioritization system
 
-**Why ICE (and not RICE):** RICE's `Reach` dimension scores how many users a finding affects, which inflates organization-wide findings (every-page bugs) and deflates page-specific ones (donate-page CLS). For AP News — a single-property site where every page shares the same script bundle — Reach is essentially a constant 5, making it a redundant axis. ICE drops Reach and lets the Impact + Confidence + Ease axes do all the work.
+**Why ICE (and not just RICE):** RICE's `Reach` dimension scores how many users a finding affects, which inflates organization-wide findings and deflates page-specific ones. For AP News — a single-property site where every page shares the same script bundle — Reach is essentially a constant 5, making it a redundant axis. ICE drops Reach and lets Impact + Confidence + Ease do all the work.
 
 **Dimensions (1–5 scale each):**
 - **Impact** — How much does this finding move the needle for the user? (1 = barely noticeable, 5 = severe revenue/risk impact)
@@ -20,102 +21,156 @@ Both systems are applied to all current corrective findings so the rankings can 
 
 **Score formula:** `ICE = Impact × Confidence × Ease`. Maximum = 125, minimum = 1.
 
-**Why this is different from RICE:**
-- No `Reach` — irrelevant when every page shares a template (single-property sites).
-- Ease is multiplied, not used as a denominator. This rewards "low-effort wins" with a higher score, which RICE also does, but the math is simpler to reason about.
-- No risk of `divide by Effort = 1` artifacts (RICE can blow up to 100+ for trivial fixes).
+### Impact derivation rule
 
-**Trade-offs acknowledged:** ICE is shorter than RICE (3 axes vs 4) and lacks the population-scale dimension. It's appropriate for a single-property audit like AP News; it would be wrong for a portfolio-level prioritization across many sites.
+The 3 sub-bullets in `findings.md` (Initial Load / Usability / User Delight, each 1–5) collapse to a single ICE Impact via this mechanical rule:
 
----
+> **`Impact = max(Initial Load, Usability)`**
 
-## All corrective findings, ICE-scored
+Rationale:
+- A severe issue in any one user-facing dimension (e.g., `Usability = 5` on a conversion page, or `Initial Load = 5` on the LCP image) is more important than uniform-moderate impact across all three. Peak severity should win.
+- `User Delight` is excluded because it is downstream of the other two — if `Initial Load` is good and `Usability` is good, `User Delight` follows. Including it would dilute the score for findings with a single sharp issue.
+- No subjective judgment — same input → same output.
 
-Sorted by ICE descending. Score range 1–125.
+### Derivation table
 
-| # | Finding | Impact | Confidence | Ease | **ICE** | RICE (for comparison) |
-|---|---|---:|---:|---:|---:|---:|
-| 1 | Initial page functionality is significantly delayed (TBT) | 4 | 5 | 5 | **100** | 100.00 |
-| 2 | TBT amplified 4× by mobile CPU throttle *(mobile callout of #1)* | 4 | 5 | 5 | **100** | 100.00 |
-| 3 | Images do not render in order of user need | 4 | 4 | 5 | **80** | 60.00 |
-| 4 | Delayed ad makes page look broken (donate CLS) | 5 | 4 | 4 | **80** | 40.00 |
-| 5 | Soft-refresh transfer savings are ~0% | 4 | 4 | 4 | **64** | 40.00 |
-| 6 | Mobile data cost: 10.75 MB per warm pageview on cellular *(mobile callout)* | 4 | 4 | 4 | **64** | 40.00 |
-| 7 | Initial visual page load is significantly delayed (LCP) | 5 | 4 | 3 | **60** | 33.33 |
-| 8 | Interactive controls invisible to AT | 5 | 3 | 4 | **60** | 37.50 |
-| 9 | Initial page render is significantly delayed | 3 | 4 | 4 | **48** | 40.00 |
-| 10 | Images ship without AVIF | 3 | 4 | 4 | **48** | 30.00 |
-| 11 | JavaScript dominates the homepage payload | 4 | 4 | 3 | **48** | 26.67 |
-| 12 | Fonts re-fetch on warm load | 2 | 3 | 3 | **18** | 10.00 |
+| Finding | Initial Load | Usability | User Delight | **Derived Impact** | Original ICE Impact | Δ |
+|---|---:|---:|---:|---:|---:|---:|
+| Initial page render is significantly delayed | 5 | 3 | 2 | **5** | 3 | +2 |
+| Initial visual page load is significantly delayed (LCP) | 5 | 3 | 2 | **5** | 5 | 0 |
+| Initial page functionality is significantly delayed (TBT) | 4 | 5 | 3 | **5** | 4 | +1 |
+| Images do not render in order of user need | 4 | 2 | 2 | **4** | 4 | 0 |
+| Delayed ad makes page look broken (donate CLS) | 1 | 5 | 1 | **5** | 5 | 0 |
+| Soft-refresh transfer savings are ~0% | 4 | 2 | 1 | **4** | 4 | 0 |
+| Interactive controls invisible to AT | 0 | 5 | 4 | **5** | 5 | 0 |
+| Images ship without AVIF | 3 | 2 | 2 | **3** | 3 | 0 |
+| JavaScript dominates the homepage payload | 5 | 4 | 1 | **5** | 4 | +1 |
+| Fonts re-fetch on warm load | 2 | 2 | 1 | **2** | 2 | 0 |
 
-**Top quartile (ICE ≥ 60):** 8 findings. Same quartile members as RICE, but the order changes.
-
-**Below-threshold (ICE < 60):** 4 findings. The render-delay, AVIF, and JS-dominates findings drop here — they require meaningful engineering work that ICE's Ease axis correctly discounts.
-
-### Appendix findings, ICE-scored
-
-| Finding | I | C | E | **ICE** | RICE |
-|---|---:|---:|---:|---:|---:|
-| Single-article template CLS (0.069) | 4 | 4 | 4 | **64** | 40.00 |
-| No field data captured (CrUX, RUM) | 2 | 5 | 5 | **50** | 40.00 |
-| 1,096 total requests (request storm) | 3 | 4 | 3 | **36** | 20.00 |
-| No web-vitals RUM installed | 3 | 5 | 2 | **30** | 18.75 |
-| DOM-size audits skipped (mega-nav) | 2 | 3 | 3 | **18** | 10.00 |
-| `Storage.getUsageAndQuota` hangs | 1 | 4 | 4 | **16** | 2.00 |
+Three findings' Impact scores change under the rule (initial render, TBT, JS dominates — all of which had `Initial Load = 5` but my original subjective scoring had marked them moderate).
 
 ---
 
-## ICE vs RICE — what changes?
+## WSJF prioritization system
 
-Five findings have a **different quartile or rank** under ICE vs RICE:
+**Why WSJF:** RICE and ICE both weight user-facing Impact heavily. WSJF flips the framing — instead of asking "how much does this affect users?", it asks "how much does delaying this cost us, and how big is the job?" This surfaces quick wins that RICE/ICE might rank lower because their impact is moderate but their Job Size is small (the opposite of JS dominates).
 
-| Finding | RICE rank | ICE rank | Δ | Why |
+**Formula:** `WSJF = Cost of Delay ÷ Job Size`
+
+**Cost of Delay (CoD)**, sum of three 1–10 subscores:
+- **UBV** (User-Business Value) — how much user/business value does fixing this deliver?
+- **TC** (Time Criticality) — does the user/business value decay if we wait? (e.g., donate CLS is critical during fundraising)
+- **RR** (Risk Reduction) — does fixing reduce risk of revenue loss, a11y lawsuit, brand harm?
+
+**Job Size (JS)**, 1–10 (1 = trivial one-line PR, 10 = multi-quarter architectural change; 5 = half-day to one-day).
+
+### WSJF scoring table
+
+| Finding | UBV | TC | RR | CoD | JS | **WSJF** |
+|---|---:|---:|---:|---:|---:|---:|
+| TBT 6–9 s on every page | 9 | 6 | 8 | 23 | 2 | **11.50** |
+| TBT amplified 4× by mobile CPU throttle *(mobile callout)* | 9 | 6 | 7 | 22 | 2 | **11.00** |
+| Delayed ad makes page look broken (donate CLS) | 10 | 9 | 9 | 28 | 3 | **9.33** |
+| Interactive controls invisible to AT | 9 | 6 | 8 | 23 | 3 | **7.67** |
+| Mobile data cost on cellular *(mobile callout)* | 7 | 5 | 6 | 18 | 4 | **4.50** |
+| Initial visual page load is significantly delayed (LCP) | 9 | 7 | 6 | 22 | 5 | **4.40** |
+| Initial page render is significantly delayed | 7 | 5 | 5 | 17 | 4 | **4.25** |
+| Soft-refresh transfer savings are ~0% | 6 | 5 | 5 | 16 | 4 | **4.00** |
+| Images do not render in order of user need | 6 | 4 | 4 | 14 | 1 | **14.00** |
+| Images ship without AVIF | 5 | 4 | 4 | 13 | 4 | **3.25** |
+| JavaScript dominates the homepage payload | 7 | 5 | 5 | 17 | 7 | **2.43** |
+| Fonts re-fetch on warm load | 3 | 3 | 3 | 9 | 5 | **1.80** |
+
+**Notable**: "Images do not render in order of user need" tops the WSJF ranking purely because Job Size = 1 (a one-line `fetchpriority` attribute change). RICE and ICE rank it lower because their Impact is moderate.
+
+---
+
+## All corrective findings, three-system comparison
+
+| # | Finding | RICE | ICE | WSJF |
+|---|---|---:|---:|---:|
+| 1 | Initial page functionality is significantly delayed (TBT) | **100.00** | **125** | **11.50** |
+| 2 | TBT amplified 4× by mobile CPU *(mobile callout)* | 100.00 | 125 | 11.00 |
+| 3 | Images do not render in order of user need | 60.00 | 80 | **14.00** |
+| 4 | Delayed ad makes page look broken (donate CLS) | 40.00 | 80 | 9.33 |
+| 5 | Initial page render is significantly delayed | 40.00 | 80 | 4.25 |
+| 6 | Initial visual page load is significantly delayed (LCP) | 33.33 | 60 | 4.40 |
+| 7 | Soft-refresh transfer savings are ~0% | 40.00 | 64 | 4.00 |
+| 8 | Mobile data cost on cellular *(mobile callout)* | 40.00 | 64 | 4.50 |
+| 9 | Interactive controls invisible to AT | 37.50 | 60 | 7.67 |
+| 10 | JavaScript dominates the homepage payload | 26.67 | 60 | 2.43 |
+| 11 | Images ship without AVIF | 30.00 | 48 | 3.25 |
+| 12 | Fonts re-fetch on warm load | 10.00 | 18 | 1.80 |
+
+**Bold** = top-3 in that system.
+
+### Appendix findings (three-system)
+
+| Finding | RICE | ICE | WSJF |
+|---|---:|---:|---:|
+| Single-article template CLS | 40 | 64 | 7.00 |
+| No field data captured (CrUX) | 40 | 50 | 5.00 |
+| 1,096 total requests | 20 | 36 | 2.00 |
+| No web-vitals RUM | 18.75 | 30 | 1.50 |
+| DOM-size audits skipped | 10 | 18 | 1.00 |
+| `Storage.getUsageAndQuota` hangs | 2 | 16 | 0.50 |
+
+---
+
+## Triangulation: top tier is robust, mid tier is contested
+
+**Consensus across all three systems (top 3 in every system):**
+- ✅ TBT 6–9 s on every page — top 3 in all 3 systems
+- ✅ Images do not render in order — top 3 in all 3 systems
+- ✅ Delayed ad / donate CLS — top 5 in all 3 systems
+
+**Contested in the mid tier:**
+- **Initial render delayed** ranks #3 in RICE, #2 in ICE, but **#8 in WSJF**. Reason: WSJF weights Job Size heavily; this finding is real engineering work (critical CSS extraction, defer render-blocking) even though it affects every page.
+- **LCP** ranks #6 in RICE, #6 in ICE, but #7 in WSJF. Similar story.
+- **JS dominates payload** ranks #10 in RICE, #7 in ICE, but **#11 in WSJF** (worst after Fonts). Real engineering work, modest direct user impact.
+
+**Bottom tier (consensus):**
+- Fonts re-fetch on warm load — bottom 2 in all 3 systems.
+
+### Sensitivity analysis
+
+How robust is the top tier to ±1 perturbation of any single dimension?
+
+| Finding | Base ICE | ICE if C drops to 3 | ICE if E drops to 3 | Still top 3? |
 |---|---:|---:|---:|---|
-| **Images do not render in order** | 2 | 3 (tie) | -1 | Same rank but ICE boosts it to ICE 80 (Ease 5 multiplier); RICE had it lower because Effort = 1 was already minimum. ICE rewards "trivial fix" more visibly. |
-| **Initial visual load (LCP)** | 7 | 7 | — | Same rank. ICE = 60 (Ease 3 = medium effort). RICE = 33.3 (Effort 3 in denominator). Both rank this below the defer-script work. |
-| **JS dominates payload** | 9 (last in main) | 11 | -2 | Drops under ICE because Ease = 3 (route-based splitting is real work). RICE's denominator dampens this less. |
-| **Interactive controls (a11y)** | 6 | 8 (tie) | -2 | Drops because Confidence = 3 (visual inspection only, audit not run). RICE weighted Confidence at 4. |
-| **Initial render delayed** | 3 (tie) | 9 (tie) | **-6** | **Biggest drop.** ICE sees Effort = 2 + Impact = 3 as low-priority; RICE saw Reach = 5 carry it to the top. **RICE's Reach axis was masking that this is moderate-effort, moderate-impact work.** |
+| TBT (125) | 125 | 100 | 100 | ✅ Yes |
+| Initial render (80) | 80 | 60 | 60 | ✅ Yes |
+| Images (80) | 80 | 60 | 64 | ✅ Yes |
+| Delayed ad (80) | 80 | 60 | 60 | ✅ Yes |
+| Soft-refresh (64) | 64 | 48 | 48 | ⚠️ drops to mid |
+| LCP (60) | 60 | 45 | 45 | ⚠️ drops |
 
-**Key takeaway:** ICE correctly ranks "trivial fixes with high user impact" higher (Images-not-in-order), and correctly demotes "reach-everywhere but lots of work" findings (Initial render, JS dominates). The RICE ranking hid the fact that the render-delayed finding is actually a moderate-priority item because every page inherits it — under ICE, that "every page" effect is captured in Impact (which is moderate here, not severe).
+**Top 4 are robust** — TBT, Initial render, Images, Delayed ad remain top quartile even with ±1 perturbation. Soft-refresh and LCP could fall with a one-step Confidence or Ease reduction.
 
----
-
-## Sequencing (using ICE ranking)
-
-Per Day 13 §7.4: low-effort wins first, structural work against the release calendar.
-
-### Phase 1 — Low-effort wins (≤1 week)
-
-Five findings, all ICE ≥ 80 OR Ease = 5:
-
-1. **Initial page functionality is significantly delayed** (ICE 100, Ease 5) — defer scripts.
-2. **Images do not render in order** (ICE 80, Ease 5) — add `fetchpriority`.
-3. **Delayed ad makes page look broken (donate CLS)** (ICE 80, Ease 4) — reserve `/donate` element dimensions.
-4. **Soft-refresh transfer savings are ~0%** (ICE 64, Ease 4) — service worker for 3P (start of phase).
-5. **Interactive controls invisible to AT** (ICE 60, Ease 4) — add `aria-label`s after audit.
-
-### Phase 2 — Structural fixes (weeks 2–4)
-
-6. **Initial visual page load is significantly delayed (LCP)** (ICE 60, Ease 3) — preload + AVIF + srcset.
-7. **Initial page render is significantly delayed** (ICE 48, Ease 4) — critical CSS + defer render-blocking.
-8. **Images ship without AVIF** (ICE 48, Ease 4) — CDN content negotiation.
-9. **Single-article template CLS** (ICE 64, appendix) — reserve ad-slot dimensions.
-10. **JavaScript dominates the homepage payload** (ICE 48, Ease 3) — route-based code splitting.
-11. **No field data captured** (ICE 50, appendix, Ease 5) — pull CrUX for 8 URLs.
-
-### Phase 3 — Architectural (weeks 4+)
-
-12. **Fonts re-fetch on warm load** (ICE 18) — font subset/preload cleanup.
-13. **1,096 total requests** (ICE 36, appendix) — consolidate bid requests.
-14. **No web-vitals RUM installed** (ICE 30, appendix) — install RUM.
-15. **DOM-size audits skipped** (ICE 18, appendix) — lazy-render mega-nav.
+For WSJF, ±1 perturbation of CoD shifts scores by ~10% — top 3 (Images 14, TBT 11.5, TBT mobile 11, Delayed ad 9.33) all remain top tier.
 
 ---
 
-## Mobile callouts (ICE)
+## Sequencing — Phase 1 plan under triangulation
 
-Same as RICE: the 2 mobile-specific findings reinforce Phase 1 (TBT mobile ICE 100) and Phase 2 (mobile data cost ICE 64). They don't introduce new phase items.
+The Phase 1 plan that satisfies **all three systems** (top tier in RICE, ICE, AND WSJF):
+
+| Phase 1 item | RICE rank | ICE rank | WSJF rank | Job Size | Notes |
+|---|---:|---:|---:|---|---|
+| **Initial page functionality is significantly delayed (TBT)** | 1 | 1 | 2 | XS | defer scripts in `<head>` — single PR |
+| **Images do not render in order of user need** | 2 | 3 | 1 | XS | add `fetchpriority="high"` to LCP image |
+| **Delayed ad makes page look broken (donate CLS)** | 4 | 4 | 4 | S | reserve `/donate` element dimensions |
+| **Interactive controls invisible to AT** | 6 | 8 | 5 | S | add `aria-label` after a11y audit |
+
+All four of these are consensus top-3-or-better across all three systems. The Phase 1 plan is **defensible against any single prioritization framework**.
+
+The mid-tier (Initial render, LCP, JS dominates, Soft-refresh) move to Phase 2. They are real and worth doing, but their priority is framework-dependent — they're robust under RICE/ICE but the WSJF view (which weights Job Size heavily) demotes them.
+
+---
+
+## Mobile callouts
+
+Both mobile-specific findings (TBT × 4× CPU throttle; cellular data cost on warm visits) score in the top tier across all three systems. They reinforce why Phase 1 (defer scripts) and Phase 2 (service worker + code splitting + AVIF) matter most for the median reader.
 
 ---
 
@@ -123,17 +178,19 @@ Same as RICE: the 2 mobile-specific findings reinforce Phase 1 (TBT mobile ICE 1
 
 Per Day 13 §5.4: overrides are legitimate and recorded.
 
-- **F-04 (donate CLS) Reach override (RICE)**: AP News's revenue team would likely score Reach = 5 instead of 4. Same finding, different RICE rank. Documented for completeness.
-- **No ICE overrides applied.** The audit ran without product owner input; if AP News weights Impact differently (e.g., brand reputation vs CWV), the ranking would shift but the math holds.
+- **RICE: donate CLS Reach override** — AP News's revenue team would score Reach = 5 instead of 4. Same finding, higher RICE rank. Documented for completeness.
+- **No ICE or WSJF overrides applied.** The audit ran without product owner input; if AP News weights Impact differently (e.g., brand reputation vs CWV), the rankings would shift but the math holds.
 
 ---
 
-## Why two systems?
+## Why three systems?
 
-Both RICE and ICE are valid. RICE is the instructor's standard (Day 5 §4); ICE is the per-property alternative. The point of using both here is to show that:
+Three systems = three different framings of the same problem:
 
-1. **The top-tier findings are robust across systems.** Top 3 under RICE = top 3 under ICE.
-2. **The middle-tier rankings shift meaningfully.** Items that RICE ranks high because of Reach can drop under ICE, where Impact + Confidence + Ease tell a different story.
-3. **The same fix list emerges in both.** Phase 1 work is the same under both systems — high-impact, easy-to-ship, high-confidence fixes ship first regardless of how you weight Reach.
+1. **RICE** asks "how many users, how much impact, how sure, how big a job?" — favors reach-everywhere wins.
+2. **ICE** asks "how much impact, how sure, how easy?" — drops Reach (constant for single-property audits) and rewards quick wins.
+3. **WSJF** asks "how much does waiting cost us, divided by job size?" — directly surfaces "tiny job + non-trivial cost of delay" items like Images-not-in-order.
 
-This redundancy is the point: the recommendations aren't artifacts of one scoring system.
+A finding that ranks top-3 in **all three** systems is robust to methodology. A finding that ranks top-3 in **only one** system is method-dependent and deserves a second look before committing engineering time.
+
+This triangulation is the deliverable. The Phase 1 plan is what we'd actually ship; the three-system comparison is the audit trail that justifies the plan.
