@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW7 complete — Build outputs section in baseline.md (JS/CSS bundles, images, 3P loading strategy) + 4 bundle-related corrective findings in findings.md. New `scripts/build-capture.mjs` (puppeteer-based, coverage API for unused-JS/CSS detection).
+**Status:** HW8 complete — Coverage (critical CSS, unused JS/CSS with source attribution), Performance frame chart (dropped frames during load/scroll/click at ~1 fps), and Layers & animations sections added to baseline.md. 3 new findings in `findings.md`.
 
 ---
 
@@ -102,7 +102,8 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
 - `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture`.
 - `scripts/setup-profile.js` — puppeteer-driven OneTrust consent acceptance.
-- `scripts/build-capture.mjs` — inspect homepage build outputs (JS/CSS bundles, image formats, 3P loading strategy, source-map exposure).
+- `scripts/build-capture.mjs` — inspect homepage build outputs (JS/CSS bundles, image formats, 3P loading strategy, source-map exposure, unused-JS via coverage API).
+- `scripts/coverage-frame-capture.mjs` — critical-CSS check, unused JS/CSS attribution, frame chart (load/scroll/click), layers & animations introspection.
 - `scripts/targets.tsv` — the 8 audited pages.
 
 ## Methodology references

@@ -116,6 +116,12 @@ audit-all parallel="1":
 build-capture:
     @node scripts/build-capture.mjs
 
+# Capture coverage (unused JS/CSS), frame chart (load/scroll/click),
+# and layer/animation introspection. Writes /tmp/coverage-frame-capture.json.
+[doc("Coverage + frame chart + layers & animations introspection")]
+coverage-frames:
+    @node scripts/coverage-frame-capture.mjs
+
 # Capture a single page screenshot
 #   just screenshot https://apnews.com/ homepage
 screenshot url name="":

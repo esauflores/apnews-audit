@@ -188,6 +188,45 @@ Build-pipeline-level findings, derived from the [Build outputs](./baseline.md#bu
 
 ---
 
+## Coverage & frames
+
+Coverage and frame-chart findings, derived from the [Coverage](./baseline.md#coverage-homepage) and [Performance frame chart](./baseline.md#performance-frame-chart) sections in `baseline.md`. Captured via `scripts/coverage-frame-capture.mjs` (`just coverage-frames`).
+
+- **First-party stylesheet is render-blocking and 100% unused on the homepage.**
+  - **Prioritization**: 70.00
+    - **Effort**: 3 · **Reach**: 5 · **Confidence**: 5
+    - **Impact**:
+      - **Initial Load**: 5 — render-blocking external CSS delays FCP and LCP
+      - **Usability**: 3
+      - **User Delight**: 2
+  - **Baseline**: The first-party `All.min.*.gz.css` is 105 KB compressed / ~786 KB uncompressed and ships via `<link rel="stylesheet">` in `<head>`. Coverage shows **786 KB of uncompressed CSS where 100% is unused on the homepage** (the homepage only needs ~24 KB of inline critical rules; the rest is for article / donate / photography / etc.). Lighthouse flags this stylesheet as render-blocking.
+  - **Cause**: no critical-CSS extraction pipeline. The stylesheet is the union of every page's styles, loaded by every page. Inline `<style>` blocks carry a few critical rules (3 of 10) but the full stylesheet still blocks render.
+  - **Solution**: extract above-the-fold CSS for each route (homepage, article, photography, etc.), inline it in `<head>`, and defer the rest via `<link rel="preload" as="style" onload="...">`. Estimated FCP improvement on the homepage: 5 s → ~2 s (since the stylesheet is on the parse-critical path today).
+
+- **Page renders at ~1 fps during load, scroll, and click — direct user-perceptible evidence of TBT.**
+  - **Prioritization**: 80.00
+    - **Effort**: 1 · **Reach**: 5 · **Confidence**: 5
+    - **Impact**:
+      - **Initial Load**: 5 — 7 of 8 frames dropped during the first 5 s of load
+      - **Usability**: 5 — scrolling is visibly frozen (5 of 6 frames dropped); clicking lags (3 of 4 frames dropped)
+      - **User Delight**: 4 — users perceive the page as broken
+  - **Baseline**: captured via `requestAnimationFrame` deltas over a 5-s window post-load, then 3 s of scroll, then a 2-s click response. Load: **0.9 fps effective** (max interval 4.9 s). Scroll: **1.3 fps**. Click: **1.9 fps**. Every "phase" has at least 75% dropped frames (>25 ms interval).
+  - **Cause**: this is the user-visible symptom of TBT 6–9 s on every page. Main-thread JS execution blocks the browser's paint pipeline; the browser literally cannot produce frames until JS yields.
+  - **Solution**: same as the "Initial page functionality is significantly delayed" finding — `defer` every non-critical script in `<head>`. After phase 1 ships, the frame chart should improve from ~1 fps to ~30+ fps.
+
+- **No aggressive layer creation in first-party code (paint cost is healthy).**
+  - **Prioritization**: 25.00
+    - **Effort**: 4 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 2 — paint cost is not the bottleneck
+      - **Usability**: 2
+      - **User Delight**: 1
+  - **Baseline**: CSS rules walk finds **0 `will-change` declarations** and **0 `translate3d(0,0,0)` hacks**. Only **1 forced compositing layer** on first paint — the Riverdrop widget iframe (370 KB preloaded but not user-visible).
+  - **Cause**: first-party CSS is well-behaved — the team has not over-applied Day 8–style "force the GPU" optimizations. The single forced layer is a third-party widget we don't control.
+  - **Solution**: this is positive news for prioritization — layer-cost optimization will not move the needle for AP News. The frame-chart dropped frames are caused by main-thread JS blocking, not by paint or composite cost. No corrective action on first-party code; consider negotiating with Riverdrop to lazy-load the iframe until user interaction.
+
+---
+
 ## Mobile-specific
 
 Mobile findings are scoped to behaviors that are unique to mobile devices or significantly worse on mobile vs desktop. All measurements here are taken under the [Mobile measurement profile](./baseline.md#mobile-measurement-profile) — Slow 4G, 4× CPU throttle, 412×823 viewport.

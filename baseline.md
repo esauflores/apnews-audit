@@ -322,6 +322,100 @@ The sync (no-attribute) scripts are the most expensive — they block HTML parsi
 
 ---
 
+## Coverage (homepage)
+
+Captured via puppeteer's v8 coverage API in `scripts/coverage-frame-capture.mjs` (`just coverage-frames`). Same methodology Lighthouse uses internally — JS and CSS coverage are started before navigation and stopped after the page settles.
+
+### Critical CSS
+
+- **10 inline `<style>` blocks** in the HTML head, totaling **24,012 bytes**.
+- **3 of those 10 blocks** contain above-the-fold selectors (matching patterns like `Page-header`, `TopNav`, `body { ... }`).
+- **The first-party stylesheet** (`assets.apnews.com/.../styles/default/All.min.df63547d20b58dba56054a82d35c3ae1.gz.css`, 105 KB compressed / **~786 KB uncompressed**) is loaded via `<link rel="stylesheet">` and is render-blocking.
+- **Observation**: critical CSS extraction is partially done (24 KB of inline rules) but the bulk of the above-the-fold styles still ships in the render-blocking external stylesheet. There is no audit-grade inlining pipeline.
+
+### Unused JavaScript
+
+| Bucket | Entries | Total bytes | Unused bytes | Unused % |
+|---|---:|---:|---:|---:|
+| **Total** | **85** | **16,200 KB** | **14,724 KB** | **90.9%** |
+
+Top 10 unused-JS offenders, by source category:
+
+| Script | Unused | % | Source |
+|---|---:|---:|---|
+| s.ntv.io (native ad, served twice) | 910 + 736 KB | 99% | 3rd-party ad |
+| live.primis.tech HLS video player | 758 KB | 83% | 3rd-party video |
+| Permutive audience platform | 730 + 692 KB | 98% | 3rd-party audience |
+| Viafoura comments widget | 671 KB | 99.9% | 3rd-party analytics |
+| Pubfig (Dianomi ad context) | 625 KB | 99% | 3rd-party ad |
+| GTM (Google Tag Manager) | 600 KB | 99.8% | Google |
+| Prebid Vid | 589 KB | 89% | 3rd-party ad |
+| Permutive web.js | 480 KB | 92% | 3rd-party audience |
+
+**Pattern**: the most unused JS is third-party ad/analytics — these scripts load 600–910 KB of code that doesn't execute on first paint. The first-party bundle (not in top 10 here because we ran a different capture cycle than the Lighthouse one) is also 82% unused on the homepage per the [Build outputs](#build-outputs-homepage) section.
+
+### Unused CSS
+
+| Bucket | Entries | Total bytes | Unused bytes | Unused % |
+|---|---:|---:|---:|---:|
+| **Total** | **45** | **1,794 KB** | **1,749 KB** | **97.5%** |
+
+Top 5 unused-CSS offenders:
+
+| Stylesheet | Unused | % | Source |
+|---|---:|---:|---|
+| First-party `All.min.*.gz.css` (×2 references) | 786 + 748 KB | 100% | first-party |
+| Viafoura | 92 KB | 100% | 3rd-party analytics |
+| Google Fonts (Roboto + Merriweather) | 23 KB each | 100% | Google |
+| Primis slate (video player) | 19 KB | 100% | 3rd-party video |
+
+**Pattern**: 97.5% of all CSS bytes ship but never match. The first-party stylesheet (786 KB uncompressed) ships every page's styles, of which almost nothing is used on the homepage.
+
+---
+
+## Performance frame chart
+
+Captured via `requestAnimationFrame` deltas in the browser, after page load + scroll + click. A "dropped frame" is defined as >25 ms between consecutive frames (the 60-fps threshold is 16.67 ms; >25 ms means the browser missed a paint).
+
+| Phase | Total frames captured | Dropped frames | Avg frame interval | Max frame interval | Effective fps |
+|---|---:|---:|---:|---:|---:|
+| **Page load** (5 s after navigation) | 8 | **7** | **1,085 ms** | **4,916 ms** | **~0.9 fps** |
+| **Scroll to bottom** (3 s) | 6 | **5** | **748 ms** | **1,800 ms** | **~1.3 fps** |
+| **Click first link** (2 s) | 4 | **3** | **529 ms** | **850 ms** | **~1.9 fps** |
+
+**Observations**:
+- The page renders at **less than 2 frames per second during load, scroll, and click**. That's not a slow page — it's a slideshow.
+- The max frame interval during load (4.9 s) corresponds to the TBT finding — JS is blocking the main thread so badly that the browser cannot paint a single frame for nearly 5 seconds.
+- Even after the page settles, scrolling still misses most frames (5 of 6 dropped).
+- Click responsiveness is similarly broken (3 of 4 dropped) — this is the INP behavior the lab-TBT number predicts.
+
+This is **direct user-perceptible evidence** of the audit's headline finding. A user scrolling or clicking experiences the page as frozen. The frame chart is the "show your work" artifact for the TBT-corrective finding.
+
+---
+
+## Layers & animations
+
+Captured via CSS rules introspection (`document.styleSheets` walk) and the Chrome DevTools Protocol `LayerTree.enable`.
+
+| Metric | Value |
+|---|---|
+| `will-change` selectors (forced layer creation) | **0** |
+| `translate3d` / `transform3d` selectors (forced compositing) | **0** |
+| `document.getAnimations()` count on first paint | **0** |
+| `<canvas>` elements | 0 |
+| `<video>` elements on first paint | 0 |
+| `<iframe>` elements | **1** (Riverdrop widget — preloaded but not seen on first paint) |
+
+**Observations**:
+- AP News's first-party CSS **does not aggressively create layers** — no `will-change` declarations, no `translate3d(0,0,0)` "useless properties" hack. This is the correct post-Day-8-§-1.3 behavior (don't create layers you don't need).
+- The single iframe (Riverdrop, 370 KB preloaded) is the only forced compositing layer on first paint, and it's not user-visible.
+- No `<canvas>` or `<video>` elements compete for paint on first paint — animation cost is low.
+- Net: **the paint-layer cost is healthy** for AP News's own code. The slowness the user feels is main-thread JS blocking, not compositing cost. (This matters for prioritization: a layer-cost optimization won't help; deferring scripts will.)
+
+This confirms that the frame-chart dropped frames are caused by **JS execution blocking the main thread**, not by paint or composite cost.
+
+---
+
 ## Methodology & caveats
 
 - **Profile**: persistent Chromium profile at `/tmp/chromium-apnews-profile` with OneTrust cookies pre-accepted via `scripts/setup-profile.js` — otherwise the consent popup blocks measurement (Day 3 §4.1 clean-state checklist).
