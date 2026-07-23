@@ -24,7 +24,7 @@ Four ways the slow page costs us money, right now:
 
 ### Readers leaving
 
-**22–46 second page loads** are 9–18× the threshold where most users bounce. Google's own data: bounce rate increases 32% per additional 1-second delay past 3 seconds.
+**22–46 second page loads** are 9–18× the threshold where most users bounce. Google's research shows bounce rate climbs sharply with load time past 3 seconds. *Sources: Google / DoubleClick "The Need for Mobile Speed" (2016); AKAMAI / Gomez "Impact of Web Latency on Conversion Rates" (2017).*
 
 ### Search ranking
 
