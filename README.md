@@ -39,22 +39,26 @@ AP News is a strong audit target for several reasons:
 - **Owned by the Associated Press, not a personal project** — recommendations are addressed to an organization that actually ships changes.
 - **The same template serves many section hubs** — a finding on World News generalizes to Politics, Sports, Business, etc.
 
-## Main PageSpeed Insights scores
+## Lighthouse mobile scores (per page)
 
-*Captured 2026-XX-XX, simulated mid-tier mobile (Slow 4G + 4× CPU), median of 3 runs per clean-state checklist.*
+*Captured 2026-07-23, Lighthouse CLI v12, mobile preset, simulated 4G throttling, headless Chromium 150, fresh profile per run, cookies pre-accepted. Per-page raw reports in `lighthouse/*.json`.*
 
-| Metric | Mobile | Desktop |
-|---|---|---|
-| Performance score | TBD | TBD |
-| LCP (p75) | TBD | TBD |
-| CLS (p75) | TBD | TBD |
-| INP (p75, field) | TBD | TBD |
-| TBT | TBD | — |
-| Total Blocking Time | TBD | — |
-| Speed Index | TBD | — |
+| # | Page | Perf | LCP | CLS | TBT | FCP | TTI |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | Homepage | **25** | 46.4 s | 0.026 | 6.95 s | 7.2 s | 62.0 s |
+| 2 | World News | **25** | 21.9 s | 0.001 | 6.37 s | 6.2 s | 47.3 s |
+| 3 | Single article | **24** | 32.4 s | 0.069 | 8.95 s | 7.7 s | 58.4 s |
+| 4 | Photography | **26** | 37.4 s | 0.001 | 6.07 s | 5.8 s | 48.9 s |
+| 5 | Quizzes | **26** | 34.4 s | 0.001 | 5.93 s | 5.0 s | 44.5 s |
+| 6 | Donate | **2** | 29.8 s | **0.800** | 5.88 s | 7.1 s | 36.8 s |
+| 7 | Search | **26** | 33.5 s | 0.001 | 5.96 s | 5.6 s | 44.3 s |
+| 8 | Newsletters | **25** | 31.3 s | 0.001 | 5.13 s | 12.5 s | 45.2 s |
 
-**CrUX field data (origin level, last 28 days):** TBD — pulled from PageSpeed Insights field panel.
-**Methodology** — see `baseline.md`.
+**Median across the 8 audited pages:** Perf **25**, LCP **33 s**, CLS **0.001**, TBT **6.0 s**.
+**All 8 pages score "poor" (Lighthouse flag = score < 50).** `/donate` scores 2 because of CLS 0.8 (8× the "good" threshold).
+
+**CrUX field data (origin level, last 28 days):** not captured — out of scope for this audit (lab evidence only). Recommended next step in `findings.md` §F-14.
+**Methodology, full per-audit breakdown, and caveats** — see `baseline.md`.
 
 ## Target pages
 
