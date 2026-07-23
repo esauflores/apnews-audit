@@ -96,11 +96,11 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `README.md` — this file
 - `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity + Build outputs (JS/CSS bundles, image formats, 3P loading strategy). Per-page sweep across 8 archetypes.
 - `findings.md` — 20 main corrective + 2 good findings across Rendering (5) / Networking (4 corrective + 2 good) / Accessibility (1) / Build outputs (4) / Coverage & frames (3) / Rendering strategies (3), plus 2 mobile-specific findings and 6 appendix findings. Each independently observable, RICE-scored.
-- `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 18 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
+- `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 21 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
 - `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
-- `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture`.
+- `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture` · `just coverage-frames` · `just rendering-strategy`.
 - `scripts/setup-profile.js` — puppeteer-driven OneTrust consent acceptance.
 - `scripts/build-capture.mjs` — inspect homepage build outputs (JS/CSS bundles, image formats, 3P loading strategy, source-map exposure, unused-JS via coverage API).
 - `scripts/coverage-frame-capture.mjs` — critical-CSS check, unused JS/CSS attribution, frame chart (load/scroll/click), layers & animations introspection.
