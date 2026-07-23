@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW9 complete — Rendering strategies section in baseline.md (all 8 pages use Brightspot SSR + Cloudflare CDN caching; homepage over-invalidates at 2 min, others cache for 1 year). 3 new findings in `findings.md` (homepage cache TTL, full-hydration cost, dual-framework on Photography hub).
+**Status:** HW10 complete — Stakeholder-focused presentation update (`presentation.html` + `presentation.md`). 9 slides aimed at product leadership: bottom line up front, business impact (readers leaving, search ranking, /donate conversion, brand), diagnosis with evidence, what's already working, ranked fixes, phase plan, cost of inaction, the ask.
 
 ---
 
@@ -97,7 +97,8 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity + Build outputs (JS/CSS bundles, image formats, 3P loading strategy). Per-page sweep across 8 archetypes.
 - `findings.md` — 20 main corrective + 2 good findings across Rendering (5) / Networking (4 corrective + 2 good) / Accessibility (1) / Build outputs (4) / Coverage & frames (3) / Rendering strategies (3), plus 2 mobile-specific findings and 6 appendix findings. Each independently observable, RICE-scored.
 - `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 21 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
-- `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
+- `presentation.html` — 9-slide stakeholder presentation (Reveal.js + Tailwind, paper/cobalt palette). Business impact framing for product leadership.
+- `presentation.md` — Same stakeholder content as `presentation.html`, in markdown for review and sharing.
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
 - `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture` · `just coverage-frames` · `just rendering-strategy`.
