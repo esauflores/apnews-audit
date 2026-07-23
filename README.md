@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** Complete — baseline captured, 15 findings ranked by RICE, 3-phase rollout plan
+**Status:** HW4 complete — baseline + networking stats captured, 12 main findings (11 corrective + 2 good) made independently observable, RICE-scored, 3-phase rollout plan
 
 ---
 
@@ -16,9 +16,10 @@ The cause is structural: **8 third-party scripts consume 12 s of main-thread tim
 - Median **LCP 22–46 s** (Google's "good" threshold is 2.5 s)
 - **TBT 5–9 s** on every page — scrolls are visibly janky on mid-range Android
 - **/donate** has CLS of **0.8** (Google's "good" is <0.1)
-- Total page weight: **9.1 MB** on first load
+- Homepage cold-load: **662 requests, 8.15 MB transfer, 24.94 MB uncompressed, 67.3% compression savings**
+- Homepage soft-refresh: **~0% transfer savings** — cache benefit eaten by third-party re-fetches
 
-Six fixes ranked by RICE. Five of them ship in phase 1 (week 1), no backend rebuild required.
+Six front-end fixes ranked by RICE. Five of them ship in phase 1 (week 1), no backend rebuild required.
 See `presentation.html` for the 9-slide pitch deck.
 
 ## The site
@@ -57,7 +58,7 @@ AP News is a strong audit target for several reasons:
 **Median across the 8 audited pages:** Perf **25**, LCP **33 s**, CLS **0.001**, TBT **6.0 s**.
 **All 8 pages score "poor" (Lighthouse flag = score < 50).** `/donate` scores 2 because of CLS 0.8 (8× the "good" threshold).
 
-**CrUX field data (origin level, last 28 days):** not captured — out of scope for this audit (lab evidence only). Recommended next step in `findings.md` §F-14.
+**CrUX field data (origin level, last 28 days):** not captured — lab evidence only. Recommended next step in `findings.md` (appendix).
 **Methodology, full per-audit breakdown, and caveats** — see `baseline.md`.
 
 ## Target pages
@@ -93,25 +94,28 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 ## What's in this repo
 
 - `README.md` — this file
-- `baseline.md` — methodology + raw measurements + CrUX field data
-- `findings.md` — full findings list with evidence, interpretation, impact, recommendation (per day 13)
-- `prioritization.md` — RICE-scored list with the recommended sequencing
-- `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette)
-- `lighthouse/*.json` — raw Lighthouse reports for all 8 pages
-- `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted)
-- `justfile` — automation: `just setup` (profile) · `just audit-all` (full sweep)
-- `scripts/setup-profile.js` — puppeteer-driven consent acceptance
-- `scripts/targets.tsv` — the 8 audited pages
+- `baseline.md` — CWV + PSI + Network Activity (cold/warm load breakdown, compression, caching). Per-page sweep across 8 archetypes.
+- `findings.md` — 12 main findings (11 corrective + 2 good) structured per the instructor example, each independently observable. Appendix with 6 additional verified findings.
+- `prioritization.md` — RICE-scored table + 3-phase rollout plan (5 in phase 1, 5 in phase 2, 4 in phase 3).
+- `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
+- `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
+- `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
+- `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report`.
+- `scripts/setup-profile.js` — puppeteer-driven OneTrust consent acceptance.
+- `scripts/targets.tsv` — the 8 audited pages.
 
 ## Methodology references
 
-- PageSpeed Insights scores: per day 3 clean-state checklist
-- CrUX field data: per day 14 auditor's seat
-- Rendering strategy fingerprint: per day 12 §5
-- Building pipeline / bundle: per day 7
-- Hydration profile: per day 12 §3
-- Prioritization (RICE): per day 5
+- PageSpeed Insights scores: per Day 3 clean-state checklist
+- Core Web Vitals (LCP / CLS / INP / FCP / TTFB): per Day 3 §2
+- Network Activity (requests / transfer / cache / compression): per Day 4
+- CrUX field data: per Day 14 auditor's seat (not captured this run)
+- Rendering strategy fingerprint: per Day 12 §5
+- Building pipeline / bundle: per Day 7
+- Hydration profile: per Day 12 §3
+- Prioritization (RICE): per Day 5
 
 ---
 
 **Course:** FE413 — Web Performance · **Instructor:** Christopher J Baker
+**Repo:** [github.com/esauflores/apnews-audit](https://github.com/esauflores/apnews-audit)

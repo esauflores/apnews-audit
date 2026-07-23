@@ -9,7 +9,7 @@
 ## Rendering
 
 - **Initial page render is significantly delayed.**
-  - **Prioritization**: 80.00
+  - **Prioritization**: 40.00
     - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
     - **Impact**:
       - **Initial Load**: 5 — blank-screen time before first paint
@@ -42,7 +42,7 @@
   - **Solution**: add `defer` to every non-critical script in `<head>` (RICE 100, 1 PR). Defer top 3 TBT contributors behind LCP via `requestIdleCallback` or `<script async>` at `</body>`.
 
 - **Images do not render in order of user need.**
-  - **Prioritization**: 25.00
+  - **Prioritization**: 60.00
     - **Effort**: 1 · **Reach**: 5 · **Confidence**: 4
     - **Impact**:
       - **Initial Load**: 4 — secondary content competes with LCP image for bandwidth
@@ -78,7 +78,7 @@
 ### Corrective
 
 - **Soft-refresh transfer savings are ~0% — the cache benefit is eaten by third-party re-fetches.**
-  - **Prioritization**: 60.00
+  - **Prioritization**: 40.00
     - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
     - **Impact**:
       - **Initial Load**: 4 — 10.7 MB on every homepage view; cold and warm are identical in bytes
@@ -89,7 +89,7 @@
   - **Solution**: audit which third-party scripts actually cache across visits (DevTools → Network → `Cache-Control` and `Age` headers). Set `stale-while-revalidate` on first-party HTML. For 3P, use a service worker to cache their static JS at AP News's origin (self-host reCAPTCHA, GTM, OneTrust). Drop the lowest-yield bidders.
 
 - **JavaScript dominates the homepage payload (4.39 MB / 54% of transfer).**
-  - **Prioritization**: 40.00
+  - **Prioritization**: 26.67 (new finding, independently observable)
     - **Effort**: 3 · **Reach**: 5 · **Confidence**: 4
     - **Impact**:
       - **Initial Load**: 5 — JS is the largest single contributor to TBT and LCP on every page
@@ -111,7 +111,7 @@
   - **Solution**: add an AVIF variant to the image CDN with JPEG/WebP fallback via `<picture>` or `image/avif,image/webp,image/jpeg` content negotiation. Hero images should be AVIF.
 
 - **Fonts re-fetch on warm load (0.61 MB → 3.09 MB, 5× more bytes; 10 → 30 requests).**
-  - **Prioritization**: 25.00
+  - **Prioritization**: 10.00 (new finding)
     - **Effort**: 3 · **Reach**: 5 · **Confidence**: 3
     - **Impact**:
       - **Initial Load**: 2
@@ -126,7 +126,7 @@
 ## Accessibility
 
 - **Interactive controls may be invisible to assistive technology.**
-  - **Prioritization**: 50.00
+  - **Prioritization**: 37.50
     - **Effort**: 2 · **Reach**: 5 · **Confidence**: 3 (lower confidence — a11y audits not run)
     - **Impact**:
       - **Initial Load**: 0
@@ -141,7 +141,7 @@
 ## Additional findings (verified but not in the top set)
 
 - **Single-article template has moderate layout shift (CLS 0.069).** Distinct mechanism from `/donate` — late-loading ad slots and related-articles widgets injecting after the article body. Independently observable (every article view), but smaller impact than the donate-page CLS. Same fix pattern: reserve dimensions for late-loading iframes / ad slots in the article template. (RICE 40)
-- **1,096 total requests on the homepage — half are third-party tracking, ad pixels, and analytics.** Top of the request-storm is reCAPTCHA, GAM, JWPlayer, Primis video, GTM. Consolidate bid requests through a single header-bidding wrapper; batch analytics beacons; use `sendBeacon` for non-critical pings. (RICE 25)
+- **1,096 total requests on the homepage — half are third-party tracking, ad pixels, and analytics.** Top of the request-storm is reCAPTCHA, GAM, JWPlayer, Primis video, GTM. Consolidate bid requests through a single header-bidding wrapper; batch analytics beacons; use `sendBeacon` for non-critical pings. (RICE 20)
 - **No web-vitals RUM installed (no `sendBeacon` traffic observed in network panel).** AP News sees traffic numbers but not CWV numbers tied to specific users; performance decisions today are based on lab audits (like this one), not continuous field data. Install `web-vitals` with attribution build + beacon on `visibilitychange` (Day 14 §4.2). (RICE 18.8)
 - **No field data captured (CrUX, RUM).** Lab-only evidence; field data would refine the 75th-percentile picture. Recommended as PR-4 in the rollout sequence. (RICE 40)
 - **Lighthouse DOM-size audits skipped for runtime reasons.** AP News section hubs include the full mega-nav with hundreds of links. Audit per route; consider lazy-rendering mega-nav on user interaction. (RICE 10)

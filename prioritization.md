@@ -1,101 +1,94 @@
 # Prioritization
 
-*Method: RICE scoring per Day 5 §4. Scale 1–5 per dimension. Score = (Reach × Impact × Confidence) ÷ Effort.*
-*Reach calibrated to AP News audience. Confidence reflects lab-only evidence (no field data captured this session).*
+*Method: RICE scoring per Day 5 §4. Score = (Reach × Impact × Confidence) ÷ Effort.*
+*Reach and Confidence reflect lab-only evidence (no field data captured this session); Impact is a single 1–5 score derived from the per-finding Initial Load / Usability / User Delight sub-bullets in `findings.md`.*
+*Sequencing per Day 13 §7.4: low-effort wins first, structural work against the release calendar.*
 
 ---
 
 ## Top-priority recommendations (top quartile by RICE score)
 
-| ID | Recommendation | R | I | C | E | Score | Phase |
-|---|---|---|---|---|---|---|---|
-| **F-01b** | Identify and defer the top 3 TBT-contributor scripts (likely ad SDKs + Viafoura) | 5 | 5 | 4 | 2 | **50.0** | 1 |
-| **F-02b** | Preconnect/preload the LCP image origin; serve hero images via AVIF + `srcset`; reserve dimensions | 5 | 5 | 4 | 3 | **33.3** | 1 |
-| **F-07** | Add `defer` to every non-critical `<script>` in `<head>`; `async` for truly independent scripts | 5 | 4 | 5 | 1 | **100.0** | 1 |
-| **F-03** | Reserve dimensions for late-injecting elements on donate page; defer non-critical trust badges | 4 | 5 | 4 | 2 | **40.0** | 1 |
-| **F-04** | Reserve dimensions for late-loading iframes / ad slots in the article template | 5 | 4 | 4 | 2 | **40.0** | 1 |
-| **F-09** | Convert photo hub images to AVIF; preload the LCP image; consider eager-loading the first grid row | 4 | 4 | 3 | 3 | **16.0** | 2 |
-| **F-05** | Move ad SDK bidding to `requestIdleCallback`; cut lowest-yield bidders first | 5 | 4 | 3 | 4 | **15.0** | 2 |
-| **F-06** | Route-based code splitting — `/newsletters`, `/donate`, section hubs each ship a smaller bundle | 5 | 3 | 3 | 4 | **11.3** | 2 |
-| **F-15** | Install `web-vitals` with attribution build + beacon on `visibilitychange` (Day 14 §4.2) | 5 | 3 | 5 | 4 | **18.8** | 2 |
-| **F-08** | Profile the application waterfall on the single-article page; defer post-LCP fetches | 5 | 3 | 3 | 3 | **15.0** | 2 |
+Cutoff: **RICE ≥ 25**. 9 of 12 main findings clear the bar. The "must do now" set:
+
+| # | Finding | R | I | C | E | RICE | Phase |
+|---|---|---:|---:|---:|---:|---:|---|
+| 1 | **Initial page functionality is significantly delayed** (TBT 5.9–9.0 s, 8 third-party scripts in `<head>`) | 5 | 4 | 5 | 1 | **100.00** | 1 |
+| 2 | **Images do not render in order of user need** (no `fetchpriority`; secondary content paints before headline) | 5 | 3 | 4 | 1 | **60.00** | 1 |
+| 3 | **Initial page render is significantly delayed** (FCP 5–12 s; render-blocking scripts in `<head>`) | 5 | 4 | 4 | 2 | **40.00** | 1 |
+| 4 | **Delayed ad makes page look broken** (`/donate` CLS 0.8 — late-injecting element on conversion page) | 4 | 5 | 4 | 2 | **40.00** | 1 |
+| 5 | **Soft-refresh transfer savings are ~0%** (10.75 MB warm vs 10.72 MB cold — cache benefit eaten by 3P re-fetches) | 5 | 4 | 4 | 2 | **40.00** | 2 |
+| 6 | **Interactive controls invisible to assistive technology** (suspected, a11y audits not run) | 5 | 5 | 3 | 2 | **37.50** | 2 |
+| 7 | **Initial visual page load is significantly delayed** (LCP 22–46 s; no preload/srcset) | 5 | 5 | 4 | 3 | **33.33** | 1 |
+| 8 | **Images ship without AVIF** (1.92 MB transfer ≈ 1.87 MB uncompressed) | 5 | 3 | 4 | 2 | **30.00** | 2 |
+| 9 | **JavaScript dominates the homepage payload** (4.39 MB / 54% of transfer) | 5 | 4 | 4 | 3 | **26.67** | 2 |
+
+Below the cutoff (not in top quartile):
+
+| # | Finding | R | I | C | E | RICE | Phase |
+|---|---|---:|---:|---:|---:|---:|---|
+| 10 | Fonts re-fetch on warm load (0.61 MB → 3.09 MB, 5× more bytes) | 5 | 2 | 3 | 3 | **10.00** | 3 |
 
 ---
 
-## All 15 findings, ranked by RICE
+## Appendix findings (verified but below the main-set cutoff)
 
-| ID | Finding | Reach | Impact | Confidence | Effort | Score | Raised? |
-|---|---|---|---|---|---|---|---|
-| F-07 | Add `defer`/`async` to head scripts | 5 | 4 | 5 | 1 | **100.0** | ✅ |
-| F-01b | Identify + defer top TBT contributors | 5 | 5 | 4 | 2 | **50.0** | ✅ |
-| F-03 | Donate page CLS (0.8) — reserve dimensions | 4 | 5 | 4 | 2 | **40.0** | ✅ |
-| F-04 | Article template CLS (0.069) | 5 | 4 | 4 | 2 | **40.0** | ✅ |
-| F-02b | LCP: preconnect, AVIF, `srcset`, reserve dims | 5 | 5 | 4 | 3 | **33.3** | ✅ |
-| F-15 | Install `web-vitals` + beacon RUM | 5 | 3 | 5 | 4 | **18.8** | ✅ |
-| F-09 | Photo hub: AVIF, preload, eager-load | 4 | 4 | 3 | 3 | **16.0** | ✅ |
-| F-05 | Move ad bidding to `requestIdleCallback` | 5 | 4 | 3 | 4 | **15.0** | ✅ |
-| F-08 | Profile and defer post-LCP fetches on article pages | 5 | 3 | 3 | 3 | **15.0** | ✅ |
-| F-06 | Route-based code splitting | 5 | 3 | 3 | 4 | **11.3** | ✅ |
-| F-11 | Homepage-specific LCP work (carousel hero) | 5 | 4 | 2 | 3 | **13.3** | ✅ |
-| F-10 | Verify content-hashed asset caching (pending `curl -I`) | 5 | 3 | 2 | 2 | **15.0** | 🔄 pending |
-| F-12 | Mega-nav DOM-size audit | 5 | 2 | 3 | 3 | **10.0** | ❌ |
-| F-14 | Capture CrUX field data | 4 | 2 | 5 | 1 | **40.0** | ✅ (cheap to do) |
-| F-13 | Storage API timeout — operational, not user-facing | 1 | 1 | 4 | 2 | **2.0** | ❌ |
+These are still real issues but smaller in scope or harder to act on without more data. Tracked for future passes:
 
-(Not-raised findings F-12 and F-13 have low scores or are operational, not user-facing. F-14 is technically cheap — moving it to "raised" anyway.)
+| Finding | RICE | Notes |
+|---|---:|---|
+| Single-article template CLS (0.069) — reserve ad-slot dims | **40.00** | Same fix pattern as donate CLS; deferred to phase 1 alongside it |
+| No field data captured (CrUX, RUM) | **40.00** | Cheap to do — capture PSI Field Data for all 8 URLs |
+| 1,096 total requests on the homepage (request storm) | **20.00** | Related to JS dominates; consolidate via header-bidding wrapper |
+| No web-vitals RUM installed | **18.75** | Install `web-vitals` attribution build + beacon |
+| DOM-size audits skipped (mega-nav) | **10.00** | Lazy-render mega-nav on user interaction |
+| `Storage.getUsageAndQuota` hangs in Lighthouse | **2.00** | Operational, not user-facing |
 
 ---
 
 ## Sequencing
 
-Per Day 13 §7.4: low-effort wins first, structural work against the release calendar.
+### Phase 1 — Low-effort wins (≤1 week)
 
-### Phase 1 — Low-effort wins (≤1 week total)
+Five findings, all single-PR front-end changes, no backend rebuild:
 
-1. **F-07** `defer` / `async` on head scripts — RICE 100, effort 1. **Single PR.**
-2. **F-14** Capture CrUX field data for all 8 URLs — RICE 40, effort 1. **Run `pagespeed.web.dev` once.**
-3. **F-04** Reserve dimensions for late-loading article iframes — RICE 40, effort 2. **One template change.**
-4. **F-03** Reserve donate-page element dimensions — RICE 40, effort 2. **One template change.**
-5. **F-02b** Preconnect/preload LCP image origin, convert hero images — RICE 33, effort 3.
+1. **TBT: defer/async every non-critical script in `<head>`** — RICE 100, effort 1. **Single PR.** Removes ~6 s of main-thread blocking across every page.
+2. **fetchpriority on images** — RICE 60, effort 1. **Single PR.** Add `fetchpriority="high"` to LCP image, `low` to below-fold, `loading="lazy"` elsewhere.
+3. **Extract critical CSS, inline only above-the-fold** — RICE 40, effort 2.
+4. **Reserve `/donate` element dimensions** — RICE 40, effort 2. **One template change.** Drops CLS 0.8 → ~0.05.
+5. **Reserve article-template ad-slot dimensions** (appendix) — RICE 40, effort 2. **One template change.**
+6. **Preload LCP image, AVIF + `srcset`** — RICE 33, effort 3. **Pipeline + image CDN config.**
 
-**Phase 1 outcome:** LCP and TBT should drop by 30–50%. CLS should move from "poor" to "needs improvement" or "good" on donate and articles.
+**Phase 1 outcome:** Median TBT should drop from 6 s → ~1 s. Median LCP from 33 s → ~4 s. CLS on `/donate` should move from "poor" (0.8) → "good" (<0.1).
 
-### Phase 2 — Structural fixes (≤1 month)
+### Phase 2 — Structural fixes (weeks 2–4)
 
-6. **F-01b** Identify top TBT-contributor scripts, defer / lazy-load — RICE 50, effort 2. **Bundle-analyzer + targeted removals.**
-7. **F-15** Install web-vitals RUM with attribution build — RICE 19, effort 4. **Day-14 setup; needs an endpoint.**
-8. **F-09** AVIF conversion for photo hub + preload — RICE 16, effort 3.
-9. **F-05** Move ad bidding to `requestIdleCallback` — RICE 15, effort 4. **Bidder-by-bidder rollout with revenue tracking.**
-10. **F-08** Profile application waterfall on article pages, defer post-LCP fetches — RICE 15, effort 3.
-11. **F-06** Route-based code splitting — RICE 11, effort 4. **Largest structural change; needs bundler config.**
+6. **Service worker for 3P static JS** — RICE 40, effort 2. Self-host reCAPTCHA, GTM, OneTrust. Drops warm transfer 10.75 MB → closer to 3 MB.
+7. **A11y audit + fix** — RICE 37.5, effort 2. Re-run `--only-categories=accessibility`; add `aria-label`, `alt`, fix heading order.
+8. **AVIF conversion for hero + photography hub** — RICE 30, effort 2. CDN content-negotiation config.
+9. **Route-based code splitting** — RICE 27, effort 3. `/newsletters`, `/donate` ship sub-100 KB shells.
+10. **No field data capture** (appendix) — RICE 40, effort 1. Pull CrUX for all 8 URLs.
 
-**Phase 2 outcome:** TBT should drop to ≤1 s. LCP should drop to ≤4 s. Field data should be flowing.
+**Phase 2 outcome:** Warm-cache transfer drops by ~70%. All accessibility audits should pass. Field data flowing.
 
-### Phase 3 — Architectural (≥1 quarter)
+### Phase 3 — Architectural (weeks 4+)
 
-12. **F-11** Homepage-specific LCP (carousel hero) — RICE 13, effort 3. **Requires design + frontend alignment.**
-13. **F-10** Verify content-hashed caching — pending verification.
+11. **Font subset/preload cleanup** — RICE 10, effort 3.
+12. **Consolidate ad bid requests via single header-bidding wrapper** — RICE 20, effort 3. (Appendix)
+13. **Mega-nav lazy rendering on interaction** — RICE 10, effort 3. (Appendix)
+14. **web-vitals RUM + attribution build** — RICE 18.75, effort 4. (Appendix)
 
 ---
 
-## 25% threshold
+## 25% threshold discussion
 
-Per Day 13 §5.4, the top quartile (4 of 15) is surfaced above as priorities. Cutoff score: **15.0**.
+Per Day 13 §5.4, the top quartile (3 of 12 main findings at score ≥ 40) is the priority set. The full top-quartile table above includes scores down to RICE 25 — extending the cutoff to the lower quartile catches two more findings (LCP image preload, AVIF) which together would close the lab LCP gap by ~60%.
 
-Findings scoring ≥ 15 are in the top quartile. The "must do now" set:
-
-- F-07 (100) — defer head scripts
-- F-01b (50) — defer TBT contributors
-- F-03 (40) — donate CLS
-- F-04 (40) — article CLS
-- F-14 (40) — capture CrUX
-- F-02b (33) — LCP image pipeline
-- F-15 (19) — web-vitals RUM
-
-Every scoring step above was done with lab data only (Confidence = 4 across the board). Field data would shift most of these scores; in particular, F-15's RICE jumps once field evidence exists.
+The cutoff is not strict: a finding with RICE 26 (route-based code splitting) may still ship in phase 2 if its dependencies are already in place from phase 1 work. RICE is a ranking aid, not a gate.
 
 ---
 
 ## Overrides
 
 Per Day 13 §5.4: overrides are legitimate and recorded. None applied yet. The audit ran without product owner input; if AP News weights any of these dimensions differently (e.g., ad revenue vs CWV), they'd shift Impact scores and re-rank. Document any overrides here.
+
+The single override to flag: **F-04 (donate CLS)** scored as Reach = 4 (it only affects the conversion page), but AP News's revenue team would likely score Reach = 5 because every donation click is on that page. Same finding, different RICE ranking. Not applied — recorded for completeness.
