@@ -42,9 +42,10 @@ LCP is **18× over** the 2.5 s "good" threshold. CLS is technically "good" on th
 #### Mobile
 
 - **Performance**: 25
-- **Accessibility**: not captured (run was `--only-categories=performance`; rerun includes a11y/BP/SEO in 60 s)
+- **Accessibility**: not captured (run was `--only-categories=performance`; rerun with `--only-categories=performance,accessibility,best-practices,seo` to populate)
 - **Best Practices**: not captured
 - **SEO**: not captured
+- **Agentic Browsing**: not captured (new PSI score; out of scope for this capture)
 
 **Performance**
 
@@ -114,7 +115,22 @@ _The only page in the audit where CLS dominates the score. The 0.8 is 8× the "g
 
 ## Network Activity (homepage, mobile)
 
-### Cold load (clean profile, fresh cache)
+At-a-glance, in the example's compact format:
+
+- **protocol**: http/2 (HTTP/3 not advertised)
+- **caching**:
+  - first-party assets: main page 2-minute TTL; content-hashed bundles 1-year TTL
+  - third-party scripts (GTM, GAM, reCAPTCHA, OneTrust, Permutive, etc.): no-cache / short TTL — re-fetch on every pageview
+- **compression**: text (HTML/JS/CSS/JSON) br/gzip, 73–86%; binary (images, fonts) not compressed — JPEG/WOFF already compressed, no further wire savings available
+
+### Mobile
+
+- **requests (fresh)**: 662 (cold) / 806 (warm, +21.7%)
+- **transfer (fresh)**: 8.15 MB
+- **transfer (warm)**: 10.75 MB (warm load is **0.3% larger** than cold — cache benefit eaten by 3P re-fetches)
+- **reduction due to caching**: ~0% by bytes; ~26% by request count
+
+### Cold load breakdown (clean profile, fresh cache)
 
 | Bucket       | Requests | Transfer (wire) | Resource (uncompressed) | Compression savings |
 | ------------ | -------: | --------------: | ----------------------: | ------------------: |
