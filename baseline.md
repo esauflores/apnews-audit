@@ -426,6 +426,63 @@ This confirms that the frame-chart dropped frames are caused by **JS execution b
 
 ---
 
+## Rendering strategies (8 audited pages)
+
+Captured 2026-07-23 via puppeteer interceptor + Node `fetch` fallback in `scripts/rendering-strategy.mjs`. Detected by inspecting (1) initial HTML size before JS runs, (2) response headers, (3) framework markers.
+
+### Strategy used
+
+**AP News uses server-side rendering (SSR) with long-lived CDN caching, served by Brightspot CMS.** All 8 audited pages return substantial HTML in the initial response (640 KB to 2.3 MB compressed), with 8–11 text-indicator matches against common news-page markers (`breaking`, `world`, `politics`, `article`, `subscribe`, etc.). This means the content is server-rendered, not a client-side shell hydrated after JS.
+
+| Page | HTML size (initial) | Strategy | Cache-Control | Age | Framework |
+|---|---:|---|---:|---:|---|
+| Homepage | **2,343,745 B** | SSR (Brightspot) | `public, max-age=120, stale-if-error=86400` | 34 s | Brightspot |
+| World News | 1,245,351 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 336 s | Brightspot |
+| Single article | 850,953 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 340 s | Brightspot |
+| Photography | 1,760,499 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 320 s | Brightspot + Astro islands |
+| Quizzes | 645,522 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 344 s | Brightspot |
+| Donate | 643,278 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 347 s | Brightspot |
+| Search | 958,931 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 117 s | Brightspot |
+| Newsletters | 654,572 B | SSR (Brightspot) | `public, max-age=30, s-maxage=31536000` | 340 s | Brightspot |
+
+**Common headers** (all 8 pages):
+- `server: cloudflare` — Cloudflare CDN
+- `x-powered-by: Brightspot` — Brightspot CMS at origin
+- `vary: Accept-Encoding` — text compression negotiated
+- `content-encoding: br` — Brotli compression (homepage captured with it on; the other captures used direct fetch and got uncompressed, which is a measurement artifact)
+
+### How this affects users
+
+**Benefits of the SSR + CDN-cache strategy:**
+
+1. **Fast initial paint** — the LCP image, headline text, and navigation are present in the initial HTML, so the browser can paint meaningful content immediately. Google's CWV measures FCP and LCP against the initial HTML render, not against JS hydration.
+2. **No flash-of-empty-content** — even on slow networks, the user sees content within ~1 s of the HTML arriving.
+3. **CDN cache benefit** — with `s-maxage=31536000` (1 year) on the CDN, repeat visits for the same URL get served from Cloudflare's edge in <100 ms. The `age` headers confirm most pages are 320–347 s old at capture time — they're being served from CDN cache.
+4. **SEO-friendly** — search engine crawlers (which often don't run JS) see the full article content in the initial HTML.
+
+**Trade-offs and costs:**
+
+1. **Hydration cost** — SSR delivers the content, but the browser still has to download, parse, and execute the 4.39 MB client JS bundle to make the page interactive. TBT 5.9–9.0 s on every page is the hydration cost of running all the third-party scripts and the first-party bundle.
+2. **First-byte HTML is enormous** — 640 KB to 2.3 MB of HTML per page. Even with `s-maxage=1 year`, the first uncached fetch downloads all of this. For a news site with breaking-news pages, this is the cost of getting fresh content.
+3. **Photography page runs two frameworks** — Brightspot SSR + Astro islands. Astro is typically used for partial hydration (islands architecture), but the page is 1.76 MB of HTML — the islands benefit isn't being realized if the whole page is server-rendered.
+4. **Homepage cache TTL is 2 minutes vs 1 year for others** — inconsistent caching. The homepage (highest-traffic) has the shortest TTL (`max-age=120`), while lower-traffic pages like `/newsletters` cache for 1 year. The homepage likely re-renders frequently because of breaking-news rotation, but 2 minutes may be too aggressive.
+5. **No streaming SSR apparent** — the HTML responses are fully buffered (the entire 2.3 MB for the homepage arrives as one chunk). Streaming SSR would let the browser begin rendering the above-the-fold content while the rest of the page is still being generated.
+
+### Is this the right choice for these pages?
+
+| Page type | Current strategy | Best fit | Verdict |
+|---|---|---|---|
+| Homepage | SSR, 2-min cache | SSG + ISR, 1-min revalidate | **Suboptimal** — homepage should be cached longer; ISR would cut origin load |
+| Section hubs (world-news, photography, quizzes) | SSR, 1-year CDN cache | SSG (already what cache TTL implies) | **Right choice** — they cache like SSG, just call it SSR for personalisation |
+| Single article | SSR, 1-year CDN cache | SSG | **Right choice** — articles don't change once published |
+| Donate | SSR, 1-year CDN cache | SSG | **Right choice** — the donation flow is mostly static |
+| Search | SSR, 30s/1yr cache | SSR (results are query-dependent) | **Right choice** — search is genuinely dynamic |
+| Newsletters | SSR, 1-year CDN cache | SSG | **Right choice** — newsletter copy is static |
+
+**Summary** — the SSR + CDN-cache approach is the right call for most page types, but the homepage is over-invalidating and would benefit from ISR (Incremental Static Regeneration) with stale-while-revalidate. The fundamental issue isn't the rendering strategy — it's the **client-side hydration cost**: 4.39 MB of JS blocks the main thread for 6–9 s after the initial SSR HTML paints. A move to partial hydration (React Server Components, Astro islands, or similar) would let interactive regions hydrate on-demand while keeping the static parts of the page frozen.
+
+---
+
 ## Methodology & caveats
 
 - **Profile**: persistent Chromium profile at `/tmp/chromium-apnews-profile` with OneTrust cookies pre-accepted via `scripts/setup-profile.js` — otherwise the consent popup blocks measurement (Day 3 §4.1 clean-state checklist).

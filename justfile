@@ -122,6 +122,12 @@ build-capture:
 coverage-frames:
     @node scripts/coverage-frame-capture.mjs
 
+# Detect rendering strategy per audited page (SSR vs CSR vs SSG).
+# Writes /tmp/rendering-strategy.json.
+[doc("Detect rendering strategy for each audited page")]
+rendering-strategy:
+    @node scripts/rendering-strategy.mjs
+
 # Capture a single page screenshot
 #   just screenshot https://apnews.com/ homepage
 screenshot url name="":

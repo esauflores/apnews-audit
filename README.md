@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW8 complete — Coverage (critical CSS, unused JS/CSS with source attribution), Performance frame chart (load/scroll render at ~1 fps; click capture failed due to SPA navigation), and Layers & animations (3 stacking contexts + 1 iframe = ~4 paint layers, no first-party forced layers) sections added to `baseline.md`. 3 new findings in `findings.md`.
+**Status:** HW9 complete — Rendering strategies section in baseline.md (all 8 pages use Brightspot SSR + Cloudflare CDN caching; homepage over-invalidates at 2 min, others cache for 1 year). 3 new findings in `findings.md` (homepage cache TTL, full-hydration cost, dual-framework on Photography hub).
 
 ---
 
@@ -95,7 +95,7 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 
 - `README.md` — this file
 - `baseline.md` — Mobile measurement profile + CWV + PSI + Network Activity + Build outputs (JS/CSS bundles, image formats, 3P loading strategy). Per-page sweep across 8 archetypes.
-- `findings.md` — 17 main corrective + 2 good findings across Rendering (5) / Networking (4 corrective + 2 good) / Accessibility (1) / Build outputs (4) / Coverage & frames (3), plus 2 mobile-specific findings and 6 appendix findings. Each independently observable, RICE-scored.
+- `findings.md` — 20 main corrective + 2 good findings across Rendering (5) / Networking (4 corrective + 2 good) / Accessibility (1) / Build outputs (4) / Coverage & frames (3) / Rendering strategies (3), plus 2 mobile-specific findings and 6 appendix findings. Each independently observable, RICE-scored.
 - `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 18 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
 - `presentation.html` — 9-slide pitch deck (Reveal.js + Tailwind, paper/cobalt palette).
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
@@ -104,6 +104,7 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `scripts/setup-profile.js` — puppeteer-driven OneTrust consent acceptance.
 - `scripts/build-capture.mjs` — inspect homepage build outputs (JS/CSS bundles, image formats, 3P loading strategy, source-map exposure, unused-JS via coverage API).
 - `scripts/coverage-frame-capture.mjs` — critical-CSS check, unused JS/CSS attribution, frame chart (load/scroll/click), layers & animations introspection.
+- `scripts/rendering-strategy.mjs` — detect rendering strategy per page (HTML-before-JS, response headers, framework markers).
 - `scripts/targets.tsv` — the 8 audited pages.
 
 ## Methodology references

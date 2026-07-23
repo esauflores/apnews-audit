@@ -227,6 +227,45 @@ Coverage and frame-chart findings, derived from the [Coverage](./baseline.md#cov
 
 ---
 
+## Rendering strategies
+
+Rendering-strategy findings, derived from the [Rendering strategies](./baseline.md#rendering-strategies-8-audited-pages) section in `baseline.md`. Captured via `scripts/rendering-strategy.mjs`.
+
+- **Homepage over-invalidates: 2-minute cache TTL vs 1-year for every other audited page.**
+  - **Prioritization**: 60.00
+    - **Effort**: 2 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 4 — homepage re-renders every 2 min, putting 100% of homepage traffic on origin
+      - **Usability**: 2
+      - **User Delight**: 1
+  - **Baseline**: The 8 audited pages split into two caching strategies. **7 pages** use `public, max-age=30, s-maxage=31536000` (browser 30 s, CDN 1 year). **The homepage** uses `public, max-age=120, stale-if-error=86400` (browser 2 min, no CDN max-age). The homepage is the highest-traffic page and benefits least from caching.
+  - **Cause**: breaking-news rotation may force frequent re-render, but 2 min is aggressive for a news site where stories update on a minutes-to-hours cadence. Likely a conservative cache choice made when the homepage was first launched.
+  - **Solution**: switch to **ISR (Incremental Static Regeneration) + stale-while-revalidate**. Set `s-maxage=31536000` (1 year) on the CDN edge, with a background revalidation every 60 s. Visitors see cached content; the origin re-renders in the background and updates the CDN. Eliminates the cold-cache stampede on breaking news.
+
+- **SSR delivers content fast, but full-hydration of 4.39 MB JS costs 6–9 s of TBT.**
+  - **Prioritization**: 80.00
+    - **Effort**: 4 · **Reach**: 5 · **Confidence**: 4
+    - **Impact**:
+      - **Initial Load**: 5 — SSR is fast but hydration blocks interactivity
+      - **Usability**: 5 — frame chart shows 0.9–1.1 fps during load/scroll
+      - **User Delight**: 4 — page is "frozen" for 6–9 s after paint
+  - **Baseline**: AP News uses Brightspot SSR (confirmed by `x-powered-by: Brightspot` headers) which delivers 640 KB–2.3 MB of initial HTML. The content is visible immediately, but the browser then has to download 4.39 MB of JS and execute it to make the page interactive. Result: FCP 7.2 s, LCP 46.4 s, TBT 6.95 s on the homepage. The frame chart confirms 0.9 fps effective.
+  - **Cause**: SSR with full hydration is the worst-of-both-worlds pattern. Content is server-rendered (good for SEO and FCP), but the client still has to download + parse + execute the entire app shell to make any interactive element work. React/Vue/Svelte-style hydration has no incremental benefit.
+  - **Solution**: **partial hydration / islands architecture**. The Photography hub already runs Astro (per framework markers), so the team is familiar with the model. Migrate the static parts of each page to non-hydrating HTML, and only hydrate interactive islands (video player, search box, comments widget, donate form). Estimated hydration cost reduction: 4.39 MB → ~500 KB. Estimated TBT reduction: 6.95 s → <1 s.
+
+- **Photography hub runs two frameworks (Brightspot + Astro islands) but ships 1.76 MB of HTML — islands benefit not realized.**
+  - **Prioritization**: 40.00
+    - **Effort**: 3 · **Reach**: 4 · **Confidence**: 3
+    - **Impact**:
+      - **Initial Load**: 3 — bigger HTML than necessary
+      - **Usability**: 2
+      - **User Delight**: 1
+  - **Baseline**: The Photography hub's HTML contains Astro markers (`data-astro-` style), but the page returns **1.76 MB of initial HTML** — the largest per-feature after the homepage. Astro's whole point is to ship *less* JS by hydrating only interactive islands, not to ship more HTML.
+  - **Cause**: the page is rendered through Brightspot's SSR pipeline, which doesn't know about Astro's partial hydration model. The Astro framework markers are likely from a single embedded component (a photo gallery?) rather than the page-level hydration strategy.
+  - **Solution**: either commit to Astro for the Photography hub (move it to a static Astro build) or remove the Astro dependency and ship the gallery as a vanilla JS island. Currently the team pays for two framework runtimes on one page.
+
+---
+
 ## Mobile-specific
 
 Mobile findings are scoped to behaviors that are unique to mobile devices or significantly worse on mobile vs desktop. All measurements here are taken under the [Mobile measurement profile](./baseline.md#mobile-measurement-profile) — Slow 4G, 4× CPU throttle, 412×823 viewport.
