@@ -3,7 +3,7 @@
 **Course:** FE413 — Web Performance
 **Project type:** Course Project (collective audit over ~3 weeks)
 **Audit target:** [AP News](https://apnews.com/)
-**Status:** HW10 complete — Stakeholder-focused presentation update (`presentation.html` + `presentation.md`). 9 slides aimed at product leadership: bottom line up front, business impact (readers leaving, search ranking, /donate conversion, brand), diagnosis with evidence, what's already working, ranked fixes, phase plan, cost of inaction, the ask.
+**Status:** HW11 complete — Implementer-focused guide (`implementation.html` + `implementation.md`). 18 slides / 12 PRs aimed at the engineer who'll fix it: mechanism, reproduction, fix, verify, risks, structural-vs-local flag per PR. Coverage statement makes explicit what we did and didn't measure.
 
 ---
 
@@ -99,6 +99,8 @@ Lightweight landing for newsletter signups. **Why include:** A small, mostly-sta
 - `prioritization.md` — Three-framework scoring: RICE + ICE (with derivation rule) + WSJF (SAFe). 21 findings + 6 appendix scored in all 3 systems; triangulation narrows Phase 1 to 4 items.
 - `presentation.html` — 9-slide stakeholder presentation (Reveal.js + Tailwind, paper/cobalt palette). Business impact framing for product leadership.
 - `presentation.md` — Same stakeholder content as `presentation.html`, in markdown for review and sharing.
+- `implementation.html` — 18-slide implementer guide (Reveal.js + Tailwind, same Pulgarcito template + JetBrains Mono for code). Per-PR: mechanism, reproduction, fix, verify, risks, structural-vs-local. References the `justfile` for reproduction.
+- `implementation.md` — Same implementer content in markdown for review and searching.
 - `lighthouse/*.json` — raw Lighthouse reports for all 8 pages.
 - `screenshots/*.png` — viewport screenshots of all 8 pages (consent pre-accepted).
 - `justfile` — automation: `just setup` · `just audit-all` · `just shoot` · `just present` · `just report` · `just build-capture` · `just coverage-frames` · `just rendering-strategy`.

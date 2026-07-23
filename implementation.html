@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AP News Performance Audit · Implementation Guide</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              paper: "#f5f4ef",
+              paper2: "#eae9e2",
+              ink: "#14140e",
+              inksoft: "#5a5a50",
+              cobalt: "#1f3a8a",
+              bad: "#b3261e",
+              warn: "#c2410c",
+              ok: "#15803d",
+              codebg: "#1e1e18",
+            },
+            fontFamily: {
+              display: ["Newsreader", "Georgia", "serif"],
+              body: ["Hanken Grotesk", "system-ui", "sans-serif"],
+              mono: ["DM Mono", "ui-monospace", "monospace"],
+              code: ["JetBrains Mono", "ui-monospace", "monospace"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      html,
+      body,
+      .reveal {
+        background: #f5f4ef;
+        color: #14140e;
+        font-family: "Hanken Grotesk", system-ui, sans-serif;
+      }
+      .reveal em {
+        font-style: italic;
+        color: #1f3a8a;
+      }
+      .section-banner {
+        font-family: "DM Mono", ui-monospace, monospace;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        padding: 0.5rem 1.5rem;
+        border: 1px solid #1f3a8a;
+        color: #1f3a8a;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      pre.codeblock {
+        background: #1e1e18;
+        color: #e8e6df;
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        line-height: 1.4;
+        overflow-x: auto;
+        white-space: pre;
+      }
+      pre.codeblock .c-comment { color: #7d7d75; }
+      pre.codeblock .c-key { color: #c594ff; }
+      pre.codeblock .c-str { color: #b6d99a; }
+      pre.codeblock .c-fn { color: #79b8ff; }
+      pre.codeblock .c-num { color: #f7c66e; }
+      pre.codeblock .c-tag { color: #f76c6c; }
+      .pill {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
+      .pill-local { color: #15803d; }
+      .pill-structural { color: #c2410c; }
+      table.tech { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      table.tech th { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #14140e; color: #1f3a8a; font-family: "DM Mono", monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; }
+      table.tech td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #eae9e2; vertical-align: top; }
+      table.tech td.code { font-family: "JetBrains Mono", monospace; font-size: 0.75rem; }
+    </style>
+  </head>
+  <body>
+    <div
+      class="fixed inset-x-0 bottom-4 z-50 flex items-center justify-between border-t border-ink px-8 font-mono text-xs uppercase tracking-[0.18em] text-ink"
+    >
+      <span id="pageno">01 / 18</span>
+      <span id="sectionlabel">implementation guide</span>
+      <span>FE413 · audit · 2026</span>
+    </div>
+
+    <div class="reveal">
+      <div class="slides">
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 1 · TITLE                                              -->
+        <!-- ============================================================ -->
+        <section data-section="title">
+          <div class="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">implementation guide</span>
+            <h1 class="max-w-3xl font-display text-6xl font-normal leading-[1.05]">
+              What do I change, and <em>how will I know it worked</em>?
+            </h1>
+            <p class="max-w-2xl font-body text-lg text-inksoft">
+              A developer's reference for the AP News performance audit findings. Each PR is self-contained: mechanism, reproduction, fix, verification, risks, structural-vs-local.
+            </p>
+            <div class="flex items-center gap-3 pt-2">
+              <span class="section-banner">codebase open · reproducible · specific</span>
+            </div>
+            <p class="font-mono text-xs uppercase tracking-widest text-cobalt pt-2">
+              github.com/esauflores/apnews-audit
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 2 · HOW TO USE THIS GUIDE                              -->
+        <!-- ============================================================ -->
+        <section data-section="how to use">
+          <div class="mx-auto flex max-w-5xl flex-col items-start gap-5">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt self-start">how to use this guide</span>
+            <h2 class="font-display text-4xl font-normal leading-tight self-start">
+              Each PR is a <em>self-contained unit of work</em>.
+            </h2>
+            <p class="font-body text-base text-inksoft max-w-4xl self-start">
+              You can pick any PR, implement it, and ship it without reading the rest of the guide. The companion documents are referenced for context, not prerequisites.
+            </p>
+            <div class="grid w-full grid-cols-3 gap-3 pt-2 text-left">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">this guide</div>
+                <div class="mt-1 font-display text-lg">PRs you ship</div>
+                <div class="mt-2 text-sm text-inksoft">Mechanism · reproduction · fix · verify · risks · structural-vs-local per PR.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">companion</div>
+                <div class="mt-1 font-display text-lg">findings.md / baseline.md</div>
+                <div class="mt-2 text-sm text-inksoft">Full evidence trail and raw measurements behind every claim. Use when verifying PRs in this guide.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">not for you</div>
+                <div class="mt-1 font-display text-lg">presentation.md / prioritization.md</div>
+                <div class="mt-2 text-sm text-inksoft">Stakeholder framing and RICE/ICE/WSJF scoring. Read for context if asked, not for the work.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 3 · COVERAGE                                           -->
+        <!-- ============================================================ -->
+        <section data-section="coverage">
+          <div class="mx-auto flex max-w-5xl flex-col gap-4">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt self-start">coverage · what this guide covers and doesn't</span>
+            <h2 class="font-display text-4xl font-normal leading-tight self-start">
+              If a domain is missing here, we considered it.
+            </h2>
+            <p class="font-body text-base text-inksoft max-w-4xl self-start">
+              A silently-skipped domain and a domain with no findings look identical from outside. Below is the explicit boundary — anything not mentioned here, we didn't look.
+            </p>
+            <div class="grid w-full grid-cols-3 gap-3 text-left">
+              <div class="rounded border border-ok bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-ok">covered</div>
+                <ul class="mt-2 space-y-1 text-xs">
+                  <li>· 8 audited pages (homepage + 7 archetypes)</li>
+                  <li>· Mobile preset (Lighthouse mobile)</li>
+                  <li>· JS bundles, CSS bundles, images</li>
+                  <li>· Third-party loading strategy + impact</li>
+                  <li>· Unused JS / unused CSS via coverage API</li>
+                  <li>· Frame chart (load / scroll)</li>
+                  <li>· Stacking contexts + paint layers</li>
+                  <li>· Rendering strategy per page</li>
+                </ul>
+              </div>
+              <div class="rounded border border-warn bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-warn">skipped (explicit)</div>
+                <ul class="mt-2 space-y-1 text-xs">
+                  <li>· Desktop PSI scores</li>
+                  <li>· INP field data (lab TBT only)</li>
+                  <li>· CrUX / RUM field data</li>
+                  <li>· Full accessibility audit (visual only)</li>
+                  <li>· SEO / Best Practices / Agentic Browsing Lighthouse categories</li>
+                  <li>· WPT filmstrip</li>
+                </ul>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-ink">considered · not applicable</div>
+                <ul class="mt-2 space-y-1 text-xs">
+                  <li>· Offline support / service worker for offline</li>
+                  <li>· HTTP/3 (not advertised by CDN)</li>
+                  <li>· WebSockets / SSE (not used by site)</li>
+                  <li>· PWA / install prompts (not a news-content fit)</li>
+                  <li>· Service worker for offline caching (covered for 3P caching, not offline)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 4 · TOOLING + REPRODUCTION                             -->
+        <!-- ============================================================ -->
+        <section data-section="tooling">
+          <div class="mx-auto flex max-w-5xl flex-col gap-4">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt self-start">tooling · reproduce every number in this guide</span>
+            <h2 class="font-display text-4xl font-normal leading-tight self-start">
+              Run the audit yourself. <em>Numbers should match</em>.
+            </h2>
+            <div class="grid w-full grid-cols-2 gap-3 text-left">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">one-time setup</div>
+                <div class="mt-2"><pre class="codeblock">just setup</pre></div>
+                <div class="mt-2 text-xs text-inksoft">Pre-accepts OneTrust cookies via puppeteer. Without this, Lighthouse measures the consent popup, not the page.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">single-page audit</div>
+                <div class="mt-2"><pre class="codeblock">just audit https://apnews.com/ homepage</pre></div>
+                <div class="mt-2 text-xs text-inksoft">Returns Lighthouse score + LCP / CLS / TBT / FCP / TTI / Speed Index for one page.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">all 8 pages</div>
+                <div class="mt-2"><pre class="codeblock">just audit-all</pre></div>
+                <div class="mt-2 text-xs text-inksoft">Sweeps all 8 audited pages in sequence. JSON output in <code class="font-code">lighthouse/*.json</code>.</div>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">build / coverage / rendering</div>
+                <div class="mt-2"><pre class="codeblock">just build-capture
+just coverage-frames
+just rendering-strategy</pre></div>
+                <div class="mt-2 text-xs text-inksoft">Puppeteer scripts for bundle / coverage / frame-chart / rendering-strategy data. Outputs to <code class="font-code">/tmp/*.json</code>.</div>
+              </div>
+            </div>
+            <p class="font-body text-sm text-inksoft pt-2 self-start">
+              The <code class="font-code">justfile</code> is the source of truth for measurement. If you need to verify a claim from this guide, run the recipe and compare.
+            </p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 5 · PR 1: DEFER SCRIPTS                                -->
+        <!-- ============================================================ -->
+        <section data-section="PR 1">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 1 · PR 1 · week 1</span>
+              <span class="pill pill-local">local</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              Defer scripts in <code class="font-code">&lt;head&gt;</code> to <em>stop blocking paint</em>.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">8 third-party scripts load synchronously in <code class="font-code">&lt;head&gt;</code>. HTML parsing blocks until each executes. Browser cannot paint or respond to user input until the script chain completes → FCP 7.2 s, TBT 6.95 s on the homepage.</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Look for render-blocking scripts in head</span>
+just audit https://apnews.com/ homepage
+<span class="c-comment"># Expected: ≥8 render-blocking resources listed</span>
+just build-capture | jq '.syncScripts'   <span class="c-comment"># sync (no async/defer) external scripts</span></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment">&lt;!-- before --&gt;</span>
+<span class="c-tag">&lt;script</span> <span class="c-key">src</span>=<span class="c-str">"https://cdn.cookielaw.org/.../OtAutoBlock.js"</span><span class="c-tag">&gt;&lt;/script&gt;</span>
+
+<span class="c-comment">&lt;!-- after (most scripts) --&gt;</span>
+<span class="c-tag">&lt;script</span> <span class="c-key">src</span>=<span class="c-str">"https://cdn.cookielaw.org/.../OtAutoBlock.js"</span> <span class="c-key">defer</span><span class="c-tag">&gt;&lt;/script&gt;</span>
+
+<span class="c-comment">&lt;!-- OR (cleaner): --&gt;</span>
+<span class="c-tag">&lt;script</span> <span class="c-key">type</span>=<span class="c-str">"module"</span> <span class="c-key">src</span>=<span class="c-str">"..."</span><span class="c-tag">&gt;&lt;/script&gt;</span>  <span class="c-comment">&lt;!-- modules are deferred by default --&gt;</span></pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <p class="text-sm">Re-run <code class="font-code">just audit</code>. Expected deltas on the homepage:</p>
+                <table class="tech mt-1">
+                  <tr><th>metric</th><th>before</th><th>after</th></tr>
+                  <tr><td>FCP</td><td class="code">7.2 s</td><td class="code">2–3 s</td></tr>
+                  <tr><td>TBT</td><td class="code">6.95 s</td><td class="code">1–2 s</td></tr>
+                  <tr><td>LCP</td><td class="code">46.4 s</td><td class="code">10–15 s</td></tr>
+                  <tr><td>perf score</td><td class="code">25</td><td class="code">60–80</td></tr>
+                </table>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Don't blindly defer everything.</b> Anti-flicker / consent SDKs may need synchronous load to avoid FOUC. OneTrust's <code class="font-code">OtAutoBlock.js</code> is intentionally sync — coordinate with CMP/legal before deferring it.</li>
+                  <li>· Test page on slow 3G — some scripts may need to be ordered, not just deferred.</li>
+                  <li>· Verify interactive features still work (search box, comments widget, video player).</li>
+                  <li>· Webcomponents-loader is already deferred — preserve that.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 6 · PR 2: FETCHPRIORITY                                -->
+        <!-- ============================================================ -->
+        <section data-section="PR 2">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 1 · PR 2 · week 1</span>
+              <span class="pill pill-local">local</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              Add <code class="font-code">fetchpriority="high"</code> to the <em>LCP image</em>.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">Browser fetches the LCP image at the same priority as below-fold images and ads. They compete for bandwidth. Adding <code class="font-code">fetchpriority="high"</code> tells the browser which image to start first.</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Network panel → filter by Img</span>
+<span class="c-comment"># LCP image shows Priority: Low / Medium</span>
+<span class="c-comment"># Compare to a below-fold ad image</span>
+<span class="c-comment"># Both have same priority — wrong.</span></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment">&lt;!-- before (LCP img tag) --&gt;</span>
+<span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">"https://dims.apnews.com/.../hero.webp"</span>
+     <span class="c-key">srcset</span>=<span class="c-str">"..."</span> <span class="c-key">sizes</span>=<span class="c-str">"..."</span>
+     <span class="c-key">width</span>=<span class="c-str">"1200"</span> <span class="c-key">height</span>=<span class="c-str">"800"</span>
+     <span class="c-key">alt</span>=<span class="c-str">"Headline story image"</span><span class="c-tag">&gt;</span>
+
+<span class="c-comment">&lt;!-- after --&gt;</span>
+<span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">"https://dims.apnews.com/.../hero.webp"</span>
+     <span class="c-key">srcset</span>=<span class="c-str">"..."</span> <span class="c-key">sizes</span>=<span class="c-str">"..."</span>
+     <span class="c-key">width</span>=<span class="c-str">"1200"</span> <span class="c-key">height</span>=<span class="c-str">"800"</span>
+     <span class="c-key">fetchpriority</span>=<span class="c-str">"high"</span>
+     <span class="c-key">alt</span>=<span class="c-str">"Headline story image"</span><span class="c-tag">&gt;</span>
+
+<span class="c-comment">&lt;!-- OR via link preload (works for CSS background images too) --&gt;</span>
+<span class="c-tag">&lt;link</span> <span class="c-key">rel</span>=<span class="c-str">"preload"</span> <span class="c-key">as</span>=<span class="c-str">"image"</span>
+      <span class="c-key">href</span>=<span class="c-str">"https://dims.apnews.com/.../hero.webp"</span>
+      <span class="c-key">imagesrcset</span>=<span class="c-str">"..."</span> <span class="c-key">imagesizes</span>=<span class="c-str">"..."</span><span class="c-tag">&gt;</span></pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock"><span class="c-comment"># Re-run lighthouse, watch LCP timing</span>
+just audit https://apnews.com/ homepage
+<span class="c-comment"># LCP should drop noticeably (10-30%)</span>
+<span class="c-comment"># Network panel: LCP image should</span>
+<span class="c-comment"># show "Priority: High" instead of Low/Medium</span></pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Don't add to all images.</b> Only the LCP element. Otherwise you create contention.</li>
+                  <li>· Different pages have different LCP elements. Coordinate with each template's rendering logic.</li>
+                  <li>· Test on slow connections — preloading can hurt if it starves other resources.</li>
+                  <li>· Some ad slots have their own priority logic; don't override.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 7 · PR 3: /donate CLS                                   -->
+        <!-- ============================================================ -->
+        <section data-section="PR 3">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 1 · PR 3 · week 1</span>
+              <span class="pill pill-local">local</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              Reserve dimensions on <code class="font-code">/donate</code> page elements.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">Late-injecting element on <code class="font-code">/donate</code> — most likely a payment-provider iframe (Stripe / PayPal / Donorbox) or a trust-badge — pushes existing content down after paint. Reader clicks "Give monthly", the button slides under their cursor. CLS = 0.8 (8× the "good" threshold of 0.1).</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Chrome DevTools → Performance</span>
+<span class="c-comment"># Enable "Layout Shift Regions"</span>
+<span class="c-comment"># Reload /donate</span>
+<span class="c-comment"># Watch for the late-injecting element</span>
+<span class="c-comment"># (clue: the shift happens ~1s after FCP)</span>
+
+just audit https://apnews.com/donate donate
+<span class="c-comment"># CLS = 0.8 (this is what you should see)</span></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment">&lt;!-- identify the late-injecting element via Performance panel, then: --&gt;</span>
+
+<span class="c-comment">&lt;!-- option A: placeholder with explicit dimensions --&gt;</span>
+<span class="c-tag">&lt;div</span> <span class="c-key">class</span>=<span class="c-str">"payment-iframe-placeholder"</span>
+     <span class="c-key">style</span>=<span class="c-str">"width: 100%; aspect-ratio: 4/3; background: #f5f4ef;"</span><span class="c-tag">&gt;</span>
+  <span class="c-comment">&lt;!-- iframe mounts here at runtime, no shift --&gt;</span>
+<span class="c-tag">&lt;/div&gt;</span>
+
+<span class="c-comment">&lt;!-- option B: explicit width + height on the iframe itself --&gt;</span>
+<span class="c-tag">&lt;iframe</span> <span class="c-key">src</span>=<span class="c-str">"https://payments.example.com/..."</span>
+        <span class="c-key">width</span>=<span class="c-str">"600"</span> <span class="c-key">height</span>=<span class="c-str">"450"</span>
+        <span class="c-key">loading</span>=<span class="c-str">"lazy"</span>
+        <span class="c-key">title</span>=<span class="c-str">"Donation form"</span><span class="c-tag">&gt;&lt;/iframe&gt;</span>
+
+<span class="c-comment">&lt;!-- option C: defer non-critical trust badges below the fold --&gt;</span>
+<span class="c-comment">&lt;!-- move them to the footer or load on user scroll --&gt;</span></pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock">just audit https://apnews.com/donate donate
+<span class="c-comment"># CLS should drop to &lt;0.05</span>
+<span class="c-comment"># perf score should rise to ~50+</span></pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Identify the right element first.</b> Don't blindly reserve space — use Performance → Layout Shift Regions to confirm which element causes the shift.</li>
+                  <li>· Some payment providers need a fixed pixel size, not aspect-ratio. Check the provider's docs.</li>
+                  <li>· Trust-badge height varies by provider; pick the largest variant.</li>
+                  <li>· If the badge is dynamically loaded with different content sizes, reserve the maximum.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 8 · PR 4: A11Y ARIA-LABEL                              -->
+        <!-- ============================================================ -->
+        <section data-section="PR 4">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 1 · PR 4 · week 1</span>
+              <span class="pill pill-structural">structural · needs full a11y audit</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              A11y audit + <code class="font-code">aria-label</code> on icon-only buttons.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">Icon-only buttons in the section header and mega-nav likely lack accessible names. Screen-reader users cannot reach key controls. The homepage DOM has visual evidence of buttons without text or <code class="font-code">aria-label</code>; full a11y audit not yet run (Confidence = 3).</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Run a full a11y audit (we only did visual inspection)</span>
+npx --yes lighthouse https://apnews.com/ \
+  --only-categories=accessibility \
+  --chrome-flags="--headless=new --no-sandbox --user-data-dir=/tmp/chromium-apnews-profile"
+<span class="c-comment"># Or: axe DevTools / Pa11y / WAVE</span></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment">&lt;!-- before (icon-only button) --&gt;</span>
+<span class="c-tag">&lt;button</span> <span class="c-key">class</span>=<span class="c-str">"icon-search"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;svg</span> <span class="c-key">aria-hidden</span>=<span class="c-str">"true"</span><span class="c-tag">&gt;</span>...<span class="c-tag">&lt;/svg&gt;</span>
+<span class="c-tag">&lt;/button&gt;</span>
+
+<span class="c-comment">&lt;!-- after --&gt;</span>
+<span class="c-tag">&lt;button</span> <span class="c-key">class</span>=<span class="c-str">"icon-search"</span> <span class="c-key">aria-label</span>=<span class="c-str">"Search"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;svg</span> <span class="c-key">aria-hidden</span>=<span class="c-str">"true"</span><span class="c-tag">&gt;</span>...<span class="c-tag">&lt;/svg&gt;</span>
+<span class="c-tag">&lt;/button&gt;</span>
+
+<span class="c-comment">&lt;!-- image elements without alt --&gt;</span>
+<span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">"..."</span><span class="c-tag">&gt;</span>          <span class="c-comment">&lt;-- before --&gt;</span>
+<span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">"..."</span> <span class="c-key">alt</span>=<span class="c-str">"Brief description"</span><span class="c-tag">&gt;</span>  <span class="c-comment">&lt;-- after --&gt;</span>
+<span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">"..."</span> <span class="c-key">alt</span>=<span class="c-str">""</span><span class="c-tag">&gt;</span>            <span class="c-comment">&lt;-- decorative --&gt;</span></pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock"><span class="c-comment"># Re-run a11y audit; expect:</span>
+<span class="c-comment"># - 0 elements with missing aria-label</span>
+<span class="c-comment"># - 0 images with missing alt</span>
+<span class="c-comment"># - 0 headings out of order</span>
+<span class="c-comment"># - Lighthouse a11y score ≥ 90</span>
+
+just audit https://apnews.com/ homepage   <span class="c-comment"># manual a11y review</span></pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Don't localize just one icon.</b> Apply consistent labels across the site.</li>
+                  <li>· Decorative images should have <code class="font-code">alt=""</code>, not be removed (screen readers handle missing alt differently).</li>
+                  <li>· Heading order matters: don't promote a styled div to h3 if no h2 exists above it.</li>
+                  <li>· Test with screen reader (VoiceOver / NVDA) — automated audits catch ~30% of issues.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 9 · PHASE 1 OUTCOMES                                   -->
+        <!-- ============================================================ -->
+        <section data-section="phase 1 outcomes">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 1 · expected outcomes</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              After four PRs, <em>most of the damage is gone</em>.
+            </h2>
+            <div class="w-full grid grid-cols-2 gap-3 text-left">
+              <div>
+                <table class="tech">
+                  <tr><th colspan="2">homepage · mobile · median over 3 runs</th></tr>
+                  <tr><th>metric</th><th>expected delta</th></tr>
+                  <tr><td>FCP</td><td class="code">7.2 s → 2–3 s</td></tr>
+                  <tr><td>LCP</td><td class="code">46.4 s → 10–15 s</td></tr>
+                  <tr><td>TBT</td><td class="code">6.95 s → 1–2 s</td></tr>
+                  <tr><td>CLS</td><td class="code">0.026 (unchanged on homepage; /donate 0.8 → 0.05)</td></tr>
+                  <tr><td>perf score</td><td class="code">25 → 60–80</td></tr>
+                  <tr><td>frame chart</td><td class="code">~0.9 fps → ~30 fps</td></tr>
+                </table>
+              </div>
+              <div class="rounded border border-ok bg-paper2 p-5">
+                <div class="font-mono text-xs uppercase tracking-widest text-ok">ship criteria</div>
+                <ul class="mt-3 space-y-2 text-sm">
+                  <li>✓ All 4 PRs merged</li>
+                  <li>✓ Homepage perf score &gt; 60</li>
+                  <li>✓ No regressions on existing pages</li>
+                  <li>✓ A11y audit clean</li>
+                  <li>✓ Frame chart shows &gt; 25 fps on load</li>
+                  <li>✓ /donate CLS &lt; 0.05</li>
+                </ul>
+                <p class="mt-3 text-xs text-inksoft">If any criterion fails, do not declare phase 1 done. Investigate before moving to phase 2.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 10 · PHASE 2 OVERVIEW                                  -->
+        <!-- ============================================================ -->
+        <section data-section="phase 2 overview">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 2 · weeks 2–4 · structural fixes</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              Five PRs to <em>fix the structure</em>.
+            </h2>
+            <p class="max-w-2xl font-body text-base text-inksoft">Each PR has its own mechanism + repro + fix + verify in the companion <code class="font-code">implementation.md</code>. The next four slides summarize each.</p>
+            <div class="w-full grid grid-cols-5 gap-2 text-left mt-2">
+              <div class="rounded border border-cobalt bg-paper2 p-3 text-center">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">PR 5</div>
+                <div class="font-display text-base mt-1">Cut webcontentassessor</div>
+              </div>
+              <div class="rounded border border-cobalt bg-paper2 p-3 text-center">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">PR 6</div>
+                <div class="font-display text-base mt-1">OneTrust async</div>
+              </div>
+              <div class="rounded border border-warn bg-paper2 p-3 text-center">
+                <div class="font-mono text-xs uppercase tracking-widest text-warn">PR 7</div>
+                <div class="font-display text-base mt-1">Route splitting</div>
+                <div class="pill pill-structural mt-2">structural</div>
+              </div>
+              <div class="rounded border border-warn bg-paper2 p-3 text-center">
+                <div class="font-mono text-xs uppercase tracking-widest text-warn">PR 8</div>
+                <div class="font-display text-base mt-1">AVIF images</div>
+                <div class="pill pill-structural mt-2">structural</div>
+              </div>
+              <div class="rounded border border-warn bg-paper2 p-3 text-center">
+                <div class="font-mono text-xs uppercase tracking-widest text-warn">PR 9</div>
+                <div class="font-display text-base mt-1">3P service worker</div>
+                <div class="pill pill-structural mt-2">structural</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 11 · PR 5 + 6: VENDOR CUTS                             -->
+        <!-- ============================================================ -->
+        <section data-section="PR 5 / PR 6">
+          <div class="mx-auto flex max-w-6xl flex-col gap-4 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 2 · PR 5 + PR 6 · weeks 2–3</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">Cut two <em>single-purpose 3P vendors</em>.</h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="flex items-center gap-2">
+                  <span class="pill pill-structural">structural · vendor contract check</span>
+                </div>
+                <h3 class="font-display text-lg mt-2">PR 5 · webcontentassessor.com</h3>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">mechanism</div>
+                <p class="text-sm">"Content quality assessment" script. 1.87 s of script execution per pageview — the single largest TBT contributor. Provides no visible user value.</p>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">the fix</div>
+                <pre class="codeblock"><span class="c-comment"># In tag manager: exclude scripts.mf.webcontentassessor.com</span>
+<span class="c-comment"># If only used on /article/*, scope to that template only</span>
+<span class="c-comment"># If unused entirely, remove the &lt;script&gt; tag</span>
+
+<span class="c-comment"># Verify by checking if editor team uses the score</span>
+<span class="c-comment"># (ask product owner; if no internal user, delete)</span></pre>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">risks</div>
+                <ul class="text-sm">
+                  <li>· Check the contract — is there a minimum-spend clause?</li>
+                  <li>· Editor team may use the dashboard; coordinate before deleting.</li>
+                </ul>
+              </div>
+
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="flex items-center gap-2">
+                  <span class="pill pill-structural">structural · CMP / legal review</span>
+                </div>
+                <h3 class="font-display text-lg mt-2">PR 6 · OneTrust async mode</h3>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">mechanism</div>
+                <p class="text-sm"><code class="font-code">OtAutoBlock.js</code> loads synchronously, blocks parsing for ~1.2 s. Intentional by OneTrust to ensure consent state before ad bid fires.</p>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">the fix</div>
+                <pre class="codeblock"><span class="c-comment">&lt;!-- before --&gt;</span>
+<span class="c-tag">&lt;script</span> <span class="c-key">src</span>=<span class="c-str">"https://cdn.cookielaw.org/.../OtAutoBlock.js"</span><span class="c-tag">&gt;&lt;/script&gt;</span>
+
+<span class="c-comment">&lt;!-- after (using OneTrust's async config) --&gt;</span>
+<span class="c-tag">&lt;script</span> <span class="c-key">src</span>=<span class="c-str">"https://cdn.cookielaw.org/.../otSDKStub.js"</span>
+        <span class="c-key">data-document-script</span>=<span class="c-str">"true"</span> <span class="c-key">async</span><span class="c-tag">&gt;&lt;/script&gt;</span>
+<span class="c-comment">&lt;!-- OtAutoBlock loaded via OtAutoBlock.js URL still, but called from OneTrustStub --&gt;</span></pre>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">risks</div>
+                <ul class="text-sm">
+                  <li>· Ad bidders may fire before consent is recorded → GDPR violation risk.</li>
+                  <li>· OneTrust support contract may require specific load order; check docs.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 12 · PR 7: ROUTE-BASED CODE SPLITTING                  -->
+        <!-- ============================================================ -->
+        <section data-section="PR 7">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 2 · PR 7 · week 2</span>
+              <span class="pill pill-structural">structural · bundler config</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              Route-based code splitting — <em>/newsletters should not ship /article code</em>.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">Single content-hashed <code class="font-code">All.min.*.gz.js</code> bundle ships on every page. Homepage coverage shows 91 KB of the 111 KB bundle never executes on first paint. /newsletters (mostly static) ships the same shell as /article (heavy interactive).</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Same All.min.* bundle is requested</span>
+<span class="c-comment"># on /, /article/*, /donate, /search,</span>
+<span class="c-comment"># /photography, /quizzes, /newsletters.</span>
+
+just build-capture | jq '.topScriptsByBytes | .[0:3]'</pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment"># webpack: dynamic import() for route entries</span>
+<span class="c-comment"># Or split-chunks config per route type</span>
+
+<span class="c-comment">// webpack.config.js (or equivalent in your bundler)</span>
+{
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        article: { test: /\/article\//, name: 'article', chunks: 'async' },
+        donate:  { test: /\/donate/,   name: 'donate',  chunks: 'async' },
+        search:  { test: /\/search/,   name: 'search',  chunks: 'async' },
+        shell:   { minChunks: 2, name: 'shell' }
+      }
+    }
+  }
+}
+
+<span class="c-comment">// At route boundary</span>
+<span class="c-key">const</span> ArticlePage = lazy(() =&gt; <span class="c-fn">import</span>(<span class="c-str">'./routes/article'</span>));</pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock"><span class="c-comment"># /newsletters initial bundle should be &lt; 50KB</span>
+just build-capture | jq '.topScriptsByBytes | .[0:3]'
+
+<span class="c-comment"># Per-route Lighthouse runs</span>
+just audit https://apnews.com/newsletters newsletters</pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Bundler config is the riskiest change.</b> Test every route, not just the homepage.</li>
+                  <li>· Don't break shared chunks — common utilities should not be duplicated.</li>
+                  <li>· Lazy-load fallback (loading spinner) must exist for every lazy route.</li>
+                  <li>· Verify all 8 audited pages still load — not just /newsletters.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 13 · PR 8: AVIF + PR 9: SERVICE WORKER                 -->
+        <!-- ============================================================ -->
+        <section data-section="PR 8 / PR 9">
+          <div class="mx-auto flex max-w-6xl flex-col gap-4 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 2 · PR 8 + PR 9 · weeks 3–4</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              AVIF + service worker for 3P caching.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="flex items-center gap-2">
+                  <span class="pill pill-structural">structural · CDN + design team</span>
+                </div>
+                <h3 class="font-display text-lg mt-2">PR 8 · AVIF image CDN</h3>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">mechanism</div>
+                <p class="text-sm">All images on the homepage are JPEG or WebP. AVIF saves 40–50% over JPEG at the same perceptual quality. CDN supports WebP via URL param but doesn't generate AVIF.</p>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">the fix</div>
+                <pre class="codeblock"><span class="c-comment">&lt;!-- before (WebP via CDN URL param) --&gt;</span>
+<span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">"https://dims.apnews.com/.../format/webp"</span><span class="c-tag">&gt;</span>
+
+<span class="c-comment">&lt;!-- after: &lt;picture&gt; with AVIF + WebP + JPEG fallback --&gt;</span>
+<span class="c-tag">&lt;picture&gt;</span>
+  <span class="c-tag">&lt;source</span> <span class="c-key">type</span>=<span class="c-str">"image/avif"</span> <span class="c-key">srcset</span>=<span class="c-str">".../format/avif"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;source</span> <span class="c-key">type</span>=<span class="c-str">"image/webp"</span> <span class="c-key">srcset</span>=<span class="c-str">".../format/webp"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;img</span> <span class="c-key">src</span>=<span class="c-str">".../format/jpeg"</span> <span class="c-key">alt</span>=<span class="c-str">"..."</span><span class="c-tag">&gt;</span>
+<span class="c-tag">&lt;/picture&gt;</span></pre>
+              </div>
+
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="flex items-center gap-2">
+                  <span class="pill pill-structural">structural · app shell conflict</span>
+                </div>
+                <h3 class="font-display text-lg mt-2">PR 9 · Service worker for 3P caching</h3>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">mechanism</div>
+                <p class="text-sm">Third-party scripts re-fetch every pageview because their cache policies are not under AP News's control. Soft-refresh transfer savings ≈ 0%. Caching 3P static JS at the edge eliminates the waste.</p>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mt-2">the fix</div>
+                <pre class="codeblock"><span class="c-comment">// service-worker.js (registered at root)</span>
+self.addEventEventListener(<span class="c-str">'fetch'</span>, (event) =&gt; {
+  <span class="c-key">const</span> url = <span class="c-key">new</span> <span class="c-fn">URL</span>(event.request.url);
+  <span class="c-key">if</span> (url.hostname.endsWith(<span class="c-str">'gstatic.com'</span>) ||
+      url.hostname.endsWith(<span class="c-str">'cookielaw.org'</span>) ||
+      url.hostname.endsWith(<span class="c-str">'viafoura.net'</span>)) {
+    event.respondWith(<span class="c-fn">caches</span>.match(event.request)
+      .then(cached =&gt; cached || <span class="c-fn">fetch</span>(event.request)));
+  }
+});</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 14 · PHASE 3 OVERVIEW                                  -->
+        <!-- ============================================================ -->
+        <section data-section="phase 3 overview">
+          <div class="mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 3 · weeks 4+ · architectural</span>
+            <h2 class="font-display text-5xl font-normal leading-tight">
+              Three changes that <em>reset the contract</em>.
+            </h2>
+            <p class="max-w-2xl font-body text-base text-inksoft">Without these, phase 1 and 2 fixes will erode in six months. Phase 3 makes performance durable.</p>
+            <div class="w-full grid grid-cols-3 gap-3 text-left mt-2">
+              <div class="rounded border border-cobalt bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">PR 10 · perf budget in CI</div>
+                <p class="text-sm mt-2">Fail the build if Lighthouse perf score drops below threshold (e.g., 75 for the homepage).</p>
+              </div>
+              <div class="rounded border border-cobalt bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">PR 11 · 3P vendor SLA</div>
+                <p class="text-sm mt-2">Each 3P vendor pays for its budget. Cut or renegotiate vendors that exceed their share.</p>
+              </div>
+              <div class="rounded border border-cobalt bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">PR 12 · RUM instrumentation</div>
+                <p class="text-sm mt-2">Install <code class="font-code">web-vitals</code> with attribution. Beacons on visibilitychange. Get real-user field data.</p>
+              </div>
+            </div>
+            <p class="font-body text-sm text-inksoft pt-3">Each is a multi-week project with cross-team coordination. The next 3 slides detail each.</p>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 15 · PR 10: PERF BUDGET IN CI                           -->
+        <!-- ============================================================ -->
+        <section data-section="PR 10">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 3 · PR 10 · weeks 4–6</span>
+              <span class="pill pill-structural">structural · CI/CD pipeline</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              Performance budget in CI — <em>fail the build on regression</em>.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">Phase 1 + 2 fixes will erode in 6 months unless regressions are caught at PR time. Lab audits run manually today; CI gates are the difference between "we measured once" and "we keep measuring."</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Today: no CI gate. Anyone can merge a</span>
+<span class="c-comment"># perf regression and no one notices.</span>
+
+<span class="c-comment"># Confirm: check the last 10 PRs</span>
+<span class="c-comment"># did anyone run a Lighthouse audit?</span>
+gh pr list --state merged --limit 10</pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment"># .github/workflows/perf-budget.yml</span>
+<span class="c-key">name</span>: perf-budget
+<span class="c-key">on</span>: [pull_request]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Lighthouse budget check
+        run: |
+          npx lhci autorun \
+            --collect.url=https://apnews.com/ \
+            --assert.assertionCount=1 \
+            --assert.assertions.categories:performance=85 \
+            --assert.assertions.first-contentful-paint=3000</pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock"><span class="c-comment"># Open a perf-regressing PR</span>
+<span class="c-comment"># CI should fail the build</span>
+<span class="c-comment"># Author fixes the regression → CI passes</span></pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Set thresholds from the post-phase-2 baseline, not the pre.</b> Don't gate at "current score" — set the bar at "what we know is achievable."</li>
+                  <li>· Allow ±5% variance — lab numbers fluctuate.</li>
+                  <li>· Run CI audits against a stable staging URL, not prod (to avoid noise).</li>
+                  <li>· Team-lead approval needed to override failed gates — don't let them be bypassed.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 16 · PR 11: 3P VENDOR SLA                               -->
+        <!-- ============================================================ -->
+        <section data-section="PR 11">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 3 · PR 11 · weeks 6–10</span>
+              <span class="pill pill-structural">structural · vendor contracts</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              3P vendor SLA — each vendor <em>pays for its budget</em>.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">Third-party vendors each consume part of the JS / network / main-thread budget. Without a per-vendor SLA, vendors grow without accountability. The audit identified webcontentassessor (1.87 s, 101 KB), Viafoura (1.4 MB / page), and Permutive (1.76 s) as the largest offenders.</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Per-vendor main-thread cost</span>
+just build-capture | jq '.topScriptsByBytes | .[0:10]'
+
+<span class="c-comment"># Per-vendor transfer cost</span>
+<span class="c-comment"># (sum scripts grouped by hostname)</span>
+just audit https://apnews.com/ homepage</pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment">// 1. Inventory all 3P vendors and their cost</span>
+<span class="c-comment">// 2. Set per-vendor budgets (script size, main-thread, transfer)</span>
+<span class="c-comment">// 3. Add SLA clauses to vendor contracts</span>
+<span class="c-comment">// 4. Quarterly vendor review: cut or renegotiate worst</span>
+
+<span class="c-comment">// Example budget table:</span>
+<span class="c-comment">// vendor        | script KB | main-thread | allowed</span>
+<span class="c-comment">// Google Tag Mgr | &lt; 250 KB | &lt; 300ms   | ✓</span>
+<span class="c-comment">// GAM           | &lt; 250 KB | &lt; 1.5 s    | ✗ over budget</span>
+<span class="c-comment">// OneTrust      | &lt; 150 KB | &lt; 1.5 s    | ✓</span>
+<span class="c-comment">// Viafoura      | &lt; 200 KB | &lt; 500ms   | ✗ over budget (cut)</span></pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock"><span class="c-comment"># Quarterly: re-run build-capture</span>
+<span class="c-comment"># Compare per-vendor cost to budget</span>
+<span class="c-comment"># Action: cut, renegotiate, or document exception</span></pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· Some contracts have minimum spend clauses. Renegotiation has business-side cost.</li>
+                  <li>· Cutting a vendor requires a replacement or business-acceptance of the loss.</li>
+                  <li>· Vendors change their SDK without notice. Set up monitoring (RUM, PR 12).</li>
+                  <li>· Get procurement / legal involved early.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 17 · PR 12: RUM INSTRUMENTATION                        -->
+        <!-- ============================================================ -->
+        <section data-section="PR 12">
+          <div class="mx-auto flex max-w-6xl flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">phase 3 · PR 12 · weeks 8–14</span>
+              <span class="pill pill-structural">structural · backend</span>
+            </div>
+            <h2 class="font-display text-3xl font-normal leading-tight">
+              RUM — <em>see what real users see</em>.
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">mechanism</div>
+                <p class="text-sm">All measurements in this audit are lab-only. Field data (CrUX, INP, real-user LCP) is the missing signal. Without it, decisions are based on lab evidence + 1 PR's intuition.</p>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">reproduction</div>
+                <pre class="codeblock"><span class="c-comment"># Confirm: no web-vitals beacon in network</span>
+<span class="c-comment"># panel today (no sendBeacon to a RUM endpoint)</span>
+grep -r 'web-vitals' src/   <span class="c-comment"># expect: 0 results</span></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">the fix</div>
+              <pre class="codeblock"><span class="c-comment">// src/lib/rum.js</span>
+<span class="c-key">import</span> { onLCP, onINP, onCLS } <span class="c-key">from</span> <span class="c-str">'web-vitals/attribution'</span>;
+
+onLCP(<span class="c-fn">sendToRUM</span>);
+onINP(<span class="c-fn">sendToRUM</span>);
+onCLS(<span class="c-fn">sendToRUM</span>);
+
+<span class="c-comment">// src/lib/rum-endpoint.js</span>
+<span class="c-key">function</span> <span class="c-fn">sendToRUM</span>(metric) {
+  navigator.sendBeacon(
+    <span class="c-str">'/api/rum'</span>,
+    <span class="c-fn">JSON</span>.stringify({
+      name: metric.name,
+      value: metric.value,
+      id: metric.id,
+      attribution: metric.attribution  <span class="c-comment">// element, time, etc.</span>
+    })
+  );
+}</pre>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">verify it worked</div>
+                <pre class="codeblock"><span class="c-comment"># Open network panel, reload a page.</span>
+<span class="c-comment"># Look for a POST to /api/rum</span>
+<span class="c-comment"># Payload should include name, value, attribution</span></pre>
+              </div>
+              <div>
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt mb-1">risks / edge cases</div>
+                <ul class="text-sm space-y-1">
+                  <li>· <b>Need a backend endpoint.</b> Even a Google Sheet via Apps Script works for MVP.</li>
+                  <li>· Beacon on <code class="font-code">visibilitychange</code>, not <code class="font-code">unload</code> (latter is unreliable on mobile).</li>
+                  <li>· PII concerns: don't ship user identifiers in attribution.</li>
+                  <li>· Self-host the web-vitals library to control cache + version pinning.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- SLIDE 18 · CROSS-REFERENCES + CLOSING                       -->
+        <!-- ============================================================ -->
+        <section data-section="references">
+          <div class="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
+            <span class="font-mono text-sm uppercase tracking-[0.28em] text-cobalt">cross-references · read in this order</span>
+            <h2 class="font-display text-4xl font-normal leading-tight">
+              When you need more, <em>go here</em>.
+            </h2>
+            <div class="w-full grid grid-cols-2 gap-3 text-left">
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">while implementing</div>
+                <ul class="mt-2 space-y-1 text-sm">
+                  <li>· <code class="font-code">baseline.md</code> — raw measurements behind every PR claim</li>
+                  <li>· <code class="font-code">findings.md</code> — full evidence trail per finding</li>
+                  <li>· <code class="font-code">/tmp/build-capture.json</code> — bundle data</li>
+                  <li>· <code class="font-code">/tmp/coverage-frame-capture.json</code> — coverage + frame chart</li>
+                </ul>
+              </div>
+              <div class="rounded border border-ink bg-paper2 p-4">
+                <div class="font-mono text-xs uppercase tracking-widest text-cobalt">for context</div>
+                <ul class="mt-2 space-y-1 text-sm">
+                  <li>· <code class="font-code">prioritization.md</code> — RICE / ICE / WSJF scoring across 21 findings</li>
+                  <li>· <code class="font-code">presentation.md</code> — stakeholder framing (for the leadership convo)</li>
+                  <li>· <code class="font-code">lighthouse/01-homepage.json</code> — raw Lighthouse output</li>
+                </ul>
+              </div>
+            </div>
+            <div class="w-full rounded border border-cobalt bg-paper2 p-4 text-left">
+              <div class="font-mono text-xs uppercase tracking-widest text-cobalt">rule of thumb</div>
+              <p class="text-sm mt-2">
+                If you can't reproduce a number in this guide, the fix won't reproduce either. Run the recipe before you ship.
+              </p>
+            </div>
+            <p class="font-mono text-sm uppercase tracking-widest text-cobalt pt-2">
+              github.com/esauflores/apnews-audit
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        transition: "fade",
+        controls: true,
+        progress: true,
+        center: true,
+        margin: 0.06,
+        width: 1280,
+        height: 720,
+        plugins: [RevealNotes],
+      });
+
+      const total = Reveal.getTotalSlides();
+      function updateBars() {
+        const i = Reveal.getIndices().h + 1;
+        document.getElementById("pageno").textContent =
+          String(i).padStart(2, "0") + " / " + String(total).padStart(2, "0");
+        const label = Reveal.getCurrentSlide().getAttribute("data-section");
+        if (label) document.getElementById("sectionlabel").textContent = label;
+      }
+      Reveal.on("ready", updateBars);
+      Reveal.on("slidechanged", updateBars);
+    </script>
+  </body>
+</html>
